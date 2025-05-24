@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { Search, Settings, User, LogOut } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Menu, Settings, User, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -14,11 +13,28 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { NotificationDropdown } from '@/components/notifications/NotificationDropdown';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 export function Header() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Get page title from pathname
+  const getPageTitle = () => {
+    if (pathname === '/dashboard') return 'Dashboard';
+    if (pathname === '/users') return 'Users';
+    if (pathname === '/investments') return 'Investments';
+    if (pathname === '/loans') return 'Loans';
+    if (pathname === '/settings') return 'Settings';
+    if (pathname === '/roles') return 'Roles';
+    if (pathname === '/profile') return 'Profile';
+    return 'LiteFi Admin';
+  };
 
   // Get user initials for avatar fallback
   const getUserInitials = () => {
@@ -27,16 +43,23 @@ export function Header() {
   };
 
   return (
-    <header className="border-b bg-background">
+    <header className="border-b bg-background sticky top-0 z-10">
       <div className="flex h-16 items-center px-4 sm:px-6">
         <div className="flex-1 flex items-center space-x-4">
-          <div className="relative w-full max-w-md">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="w-full pl-8 bg-background"
-            />
+          <SidebarTrigger>
+            <Button variant="ghost" size="icon" className="md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle sidebar</span>
+            </Button>
+          </SidebarTrigger>
+          <div className="flex items-center gap-2">
+            <Separator orientation="vertical" className="h-4 hidden md:block" />
+            <h1 className={cn(
+              "text-xl font-semibold",
+              pathname === '/' && "text-primary"
+            )}>
+              {getPageTitle()}
+            </h1>
           </div>
         </div>
         <div className="flex items-center space-x-4">
