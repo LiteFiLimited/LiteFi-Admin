@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -18,10 +18,15 @@ export const metadata: Metadata = {
     shortcut: "/assets/logo.svg",
     apple: "/assets/logo.svg",
   },
-  viewport: "width=device-width, initial-scale=1.0, maximum-scale=1.0",
   other: {
     "format-detection": "telephone=no, date=no, email=no, address=no"
   }
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1.0,
+  maximumScale: 1.0,
 };
 
 export default function RootLayout({
