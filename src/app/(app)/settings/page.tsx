@@ -27,12 +27,14 @@ export default function SettingsPage() {
       <h1 className="text-3xl font-bold">Settings</h1>
       
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="general">General Settings</TabsTrigger>
-          <TabsTrigger value="investmentPlans">Investment Plans</TabsTrigger>
-          <TabsTrigger value="loanProducts">Loan Products</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-2">
+          <TabsList className="inline-flex w-max">
+            <TabsTrigger value="general">General Settings</TabsTrigger>
+            <TabsTrigger value="investmentPlans">Investment Plans</TabsTrigger>
+            <TabsTrigger value="loanProducts">Loan Products</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          </TabsList>
+        </div>
         
         {/* General Settings Tab */}
         <TabsContent value="general" className="space-y-4">
