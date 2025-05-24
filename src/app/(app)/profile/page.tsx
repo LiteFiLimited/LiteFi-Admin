@@ -9,11 +9,22 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Save, Lock } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // Get tab from URL or default to personal
+  const tab = searchParams.get('tab') || 'personal';
+  
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    router.push(`/profile?tab=${value}`);
+  };
 
   // Get user initials for avatar
   const getUserInitials = () => {
@@ -74,7 +85,7 @@ export default function ProfilePage() {
         </Card>
         
         <div>
-          <Tabs defaultValue="personal" className="space-y-4">
+          <Tabs value={tab} onValueChange={handleTabChange} className="space-y-4">
             <div className="overflow-x-auto pb-2">
               <TabsList className="inline-flex w-max">
                 <TabsTrigger value="personal">Personal Information</TabsTrigger>
