@@ -265,8 +265,7 @@ export default function RolesPage() {
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <>
-                          <Power className="h-4 w-4 mr-1" />
-                          {admin.isActive ? 'Deactivate' : 'Activate'}
+                          {admin.isActive ? 'Deactivate' : 'Activate'} <Power className="h-4 w-4 ml-1" />
                         </>
                       )}
                     </Button>
