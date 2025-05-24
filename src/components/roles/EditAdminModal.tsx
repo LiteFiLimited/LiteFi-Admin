@@ -148,8 +148,7 @@ export function EditAdminModal({ admin, onEditAdmin }: EditAdminModalProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <Pencil className="h-4 w-4 mr-1" />
-          Edit
+          Edit <Pencil className="h-4 w-4 ml-1" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
