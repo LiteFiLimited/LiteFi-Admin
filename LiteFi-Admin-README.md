@@ -104,8 +104,8 @@ The system supports the following admin roles:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-organization/litefi-admin.git
-   cd litefi-admin
+   git clone https://github.com/LiteFiLimited/LiteFi-Admin.git
+   cd LiteFi-Admin
    ```
 
 2. Install dependencies:
