@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
+import { ScrollToTopButton } from '@/components/ScrollToTopButton';
 
 export default function AppLayout({
   children,
@@ -16,6 +17,7 @@ export default function AppLayout({
         <Header />
         <main className="flex-1 overflow-auto p-6">
           {children}
+          <ScrollToTopButton />
         </main>
       </div>
     </div>
