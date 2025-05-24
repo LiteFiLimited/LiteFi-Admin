@@ -2,8 +2,6 @@
 
 A modern, responsive admin dashboard for the LiteFi financial platform built with Next.js 15, shadcn UI, and TypeScript.
 
-![LiteFi Admin Dashboard](/public/assets/litefi.svg)
-
 ## Overview
 
 The LiteFi Admin Dashboard is a comprehensive interface for financial administrators to manage users, investments, loans, and system settings. It features role-based access control, detailed analytics, and a modern UI built with the latest web technologies.
@@ -93,8 +91,8 @@ The LiteFi Admin Dashboard is a comprehensive interface for financial administra
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-organization/litefi-admin.git
-   cd litefi-admin
+   git clone https://github.com/LiteFiLimited/LiteFi-Admin.git
+   cd LiteFi-Admin
    ```
 
 2. Install dependencies:
