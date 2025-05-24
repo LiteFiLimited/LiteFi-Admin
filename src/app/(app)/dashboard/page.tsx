@@ -76,11 +76,13 @@ export default function DashboardPage() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="investments">Investments</TabsTrigger>
-          <TabsTrigger value="loans">Loans</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-2">
+          <TabsList className="inline-flex w-max">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="investments">Investments</TabsTrigger>
+            <TabsTrigger value="loans">Loans</TabsTrigger>
+          </TabsList>
+        </div>
         <TabsContent value="overview" className="space-y-4">
           <Card>
             <CardHeader>
