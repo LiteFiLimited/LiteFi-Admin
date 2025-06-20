@@ -14,7 +14,6 @@ import {
   CreditCard, 
   ArrowDownToLine, 
   ArrowUpFromLine, 
-  DollarSign, 
   TrendingUp, 
   Clock, 
   CheckCircle, 
@@ -25,7 +24,7 @@ import {
   FileCheck,
   FileX
 } from 'lucide-react';
-import { DepositStatus, WithdrawalStatus, PaymentMethod } from '@/lib/types';
+import { DepositStatus, WithdrawalStatus, PaymentMethod, Withdrawal } from '@/lib/types';
 import { useToast } from '@/components/ui/toast-provider';
 
 export default function WalletPage() {
@@ -158,7 +157,7 @@ export default function WalletPage() {
   ]);
 
   // State for withdrawal processing modal
-  const [selectedWithdrawal, setSelectedWithdrawal] = useState<any>(null);
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
   const [isProcessingModalOpen, setIsProcessingModalOpen] = useState(false);
   const [processingNotes, setProcessingNotes] = useState('');
   const [processingReference, setProcessingReference] = useState('');
@@ -200,7 +199,7 @@ export default function WalletPage() {
       case DepositStatus.FAILED:
         return <Badge className="bg-red-500"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>;
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -213,7 +212,7 @@ export default function WalletPage() {
       case WithdrawalStatus.REJECTED:
         return <Badge className="bg-red-500"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -226,15 +225,15 @@ export default function WalletPage() {
       case 'MAINTENANCE':
         return <Badge className="bg-yellow-500">Maintenance</Badge>;
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const handleProcessWithdrawal = (withdrawal: any) => {
+  const handleProcessWithdrawal = (withdrawal: Withdrawal) => {
     setSelectedWithdrawal(withdrawal);
+    setIsProcessingModalOpen(true);
     setProcessingNotes('');
     setProcessingReference('');
-    setIsProcessingModalOpen(true);
   };
 
   const processWithdrawal = async (approve: boolean) => {
@@ -242,13 +241,8 @@ export default function WalletPage() {
 
     try {
       // Here you would call the API to process the withdrawal
-      console.log('Processing withdrawal:', {
-        id: selectedWithdrawal.id,
-        approve,
-        notes: processingNotes,
-        reference: processingReference
-      });
-
+      console.log(`${approve ? 'Approving' : 'Rejecting'} withdrawal ${selectedWithdrawal.id}`);
+      
       toast({
         title: `Withdrawal ${approve ? 'Approved' : 'Rejected'}`,
         message: `Withdrawal ${selectedWithdrawal.reference} has been ${approve ? 'approved' : 'rejected'}`,
@@ -257,10 +251,10 @@ export default function WalletPage() {
 
       setIsProcessingModalOpen(false);
       setSelectedWithdrawal(null);
-    } catch (error) {
+    } catch {
       toast({
-        title: "Error",
-        message: "Failed to process withdrawal. Please try again.",
+        title: "Error Processing Withdrawal",
+        message: "There was an error processing the withdrawal. Please try again.",
         type: "error",
       });
     }

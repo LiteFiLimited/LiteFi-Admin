@@ -27,26 +27,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
-  const addToast = useCallback((options: ToastOptions) => {
+  const toast = useCallback((options: ToastOptions) => {
     const id = `toast-${++toastCounter}`;
     const newToast: ToastProps = {
       id,
       ...options,
-      onClose: removeToast,
+      onCloseAction: removeToast,
     };
 
     setToasts((prev) => [...prev, newToast]);
     return id;
   }, [removeToast]);
 
-  const toast = useCallback((options: ToastOptions) => {
-    return addToast(options);
-  }, [addToast]);
-
   return (
     <ToastContext.Provider value={{ toast, removeToast }}>
       {children}
-      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+      <ToastContainer toasts={toasts} onRemoveToastAction={removeToast} />
     </ToastContext.Provider>
   );
 }

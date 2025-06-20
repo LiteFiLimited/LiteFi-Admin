@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,15 +18,25 @@ import {
   Send,
   Eye,
   Check,
-  CheckAll,
+  CheckCircle2,
   Clock,
   AlertCircle,
   Info,
-  AlertTriangle,
-  Users
+  AlertTriangle
 } from 'lucide-react';
 import { Notification } from '@/lib/types';
 import { useToast } from '@/components/ui/toast-provider';
+
+// Define types for notification creation
+type NotificationType = 'info' | 'warning' | 'alert';
+type RecipientType = 'all' | 'admins' | 'specific';
+
+interface NewNotificationState {
+  title: string;
+  message: string;
+  type: NotificationType;
+  recipients: RecipientType;
+}
 
 export default function NotificationsPage() {
   const { toast } = useToast();
@@ -73,11 +82,11 @@ export default function NotificationsPage() {
 
   // State for creating new notifications
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newNotification, setNewNotification] = useState({
+  const [newNotification, setNewNotification] = useState<NewNotificationState>({
     title: '',
     message: '',
-    type: 'info' as const,
-    recipients: 'all' as const
+    type: 'info',
+    recipients: 'all'
   });
 
   // Calculate notification statistics
@@ -183,7 +192,7 @@ export default function NotificationsPage() {
         type: 'info',
         recipients: 'all'
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         message: "Failed to create notification. Please try again.",
@@ -202,7 +211,7 @@ export default function NotificationsPage() {
         message: "All unread notifications have been marked as read",
         type: "success",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         message: "Failed to mark notifications as read. Please try again.",
@@ -220,7 +229,7 @@ export default function NotificationsPage() {
         title: "Notification Marked as Read",
         type: "success",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         message: "Failed to mark notification as read. Please try again.",
@@ -235,7 +244,7 @@ export default function NotificationsPage() {
         <h1 className="text-3xl font-bold">Notification Management</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={markAllAsRead}>
-            <CheckAll className="w-4 h-4 mr-2" />
+            <CheckCircle2 className="w-4 h-4 mr-2" />
             Mark All Read
           </Button>
           <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -281,7 +290,7 @@ export default function NotificationsPage() {
                   <Label htmlFor="type">Type</Label>
                   <Select 
                     value={newNotification.type} 
-                    onValueChange={(value: 'info' | 'warning' | 'alert') => 
+                    onValueChange={(value: NotificationType) => 
                       setNewNotification(prev => ({ ...prev, type: value }))
                     }
                   >
@@ -300,7 +309,7 @@ export default function NotificationsPage() {
                   <Label htmlFor="recipients">Recipients</Label>
                   <Select 
                     value={newNotification.recipients} 
-                    onValueChange={(value: 'all' | 'admins' | 'specific') => 
+                    onValueChange={(value: RecipientType) => 
                       setNewNotification(prev => ({ ...prev, recipients: value }))
                     }
                   >

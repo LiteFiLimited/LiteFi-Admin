@@ -346,14 +346,14 @@ export default function RolesPage() {
                   <TableCell>{getStatusBadge(admin.isActive)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <EditAdminModal
-                        admin={admin}
-                        onEditAdmin={handleEditAdmin}
-                      />
+                    <EditAdminModal 
+                      admin={admin} 
+                      onEditAdmin={handleEditAdmin} 
+                    />
                       <Switch
                         checked={admin.isActive}
                         onCheckedChange={() => handleToggleActive(admin)}
-                        disabled={processingAdminId === admin.id}
+                      disabled={processingAdminId === admin.id}
                       />
                     </div>
                   </TableCell>

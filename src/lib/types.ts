@@ -128,14 +128,137 @@ export interface DashboardStats {
   investmentsTotal: number;
   activeLoans: number;
   loansTotal: number;
-  recentActivities: Activity[];
+  recentActivities: DashboardActivity[];
 }
 
-export interface Activity {
+// Dashboard API Response Types
+export interface DashboardSummary {
+  overview: {
+    totalUsers: number;
+    activeUsers: number;
+    totalLoans: number;
+    activeLoans: number;
+    totalInvestments: number;
+    activeInvestments: number;
+    totalTransactions: number;
+    totalRevenue: number;
+  };
+  recentStats: {
+    newUsersToday: number;
+    newLoansToday: number;
+    newInvestmentsToday: number;
+    transactionsToday: number;
+  };
+  monthlyGrowth: {
+    userGrowth: number;
+    loanGrowth: number;
+    investmentGrowth: number;
+    revenueGrowth: number;
+  };
+}
+
+export interface DashboardActivity {
   id: string;
-  type: 'USER_REGISTRATION' | 'INVESTMENT_CREATED' | 'LOAN_CREATED' | 'DEPOSIT' | 'WITHDRAWAL';
+  type: 'USER_REGISTRATION' | 'LOAN_APPLICATION' | 'INVESTMENT_CREATED' | 'WITHDRAWAL_REQUEST' | 'DEPOSIT_COMPLETED' | 'LOAN_APPROVED' | 'INVESTMENT_MATURED';
   description: string;
   timestamp: string;
+  severity: 'INFO' | 'WARNING' | 'ERROR';
+}
+
+export interface DashboardActivitiesResponse {
+  activities: DashboardActivity[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+}
+
+export interface LoanStats {
+  overview: {
+    totalLoans: number;
+    activeLoans: number;
+    completedLoans: number;
+    defaultedLoans: number;
+    totalLoanAmount: number;
+    totalRepaid: number;
+  };
+  byStatus: {
+    PENDING: number;
+    APPROVED: number;
+    ACTIVE: number;
+    COMPLETED: number;
+    DEFAULTED: number;
+    REJECTED: number;
+  };
+  byType: {
+    SALARY: number;
+    WORKING_CAPITAL: number;
+    AUTO: number;
+    PERSONAL: number;
+  };
+  monthlyData: Array<{
+    month: string;
+    applications: number;
+    approved: number;
+    disbursed: number;
+    amount: number;
+  }>;
+}
+
+export interface InvestmentStats {
+  overview: {
+    totalInvestments: number;
+    activeInvestments: number;
+    maturedInvestments: number;
+    totalInvestmentAmount: number;
+    totalInterestPaid: number;
+  };
+  byStatus: {
+    PENDING: number;
+    ACTIVE: number;
+    MATURED: number;
+    WITHDRAWN: number;
+    CANCELLED: number;
+  };
+  byType: {
+    NAIRA: number;
+    FOREIGN: number;
+    EQUITY: number;
+  };
+  monthlyData: Array<{
+    month: string;
+    investments: number;
+    amount: number;
+    interestPaid: number;
+  }>;
+}
+
+export interface SystemHealth {
+  database: {
+    status: 'CONNECTED' | 'DISCONNECTED';
+    responseTime: string;
+    connections: number;
+  };
+  externalServices: {
+    mono: ServiceStatus;
+    dot: ServiceStatus;
+    zeptomail: ServiceStatus;
+    sms: ServiceStatus;
+  };
+  serverMetrics: {
+    uptime: string;
+    memoryUsage: string;
+    cpuUsage: string;
+    diskUsage: string;
+  };
+}
+
+export interface ServiceStatus {
+  status: 'AVAILABLE' | 'UNAVAILABLE' | 'DEGRADED';
+  responseTime: string;
+  lastChecked: string;
 }
 
 // System Settings Types
@@ -226,4 +349,12 @@ export interface WalletStats {
   totalVolume: number;
   completedDeposits: number;
   completedWithdrawals: number;
+}
+
+// Legacy interface for backwards compatibility
+export interface Activity {
+  id: string;
+  type: 'USER_REGISTRATION' | 'INVESTMENT_CREATED' | 'LOAN_CREATED' | 'DEPOSIT' | 'WITHDRAWAL';
+  description: string;
+  timestamp: string;
 } 
