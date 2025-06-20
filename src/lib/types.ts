@@ -46,6 +46,29 @@ export interface User {
   updatedAt: string;
 }
 
+// Pagination types
+export interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: Pagination;
+}
+
+// User response types
+export interface UserResponse {
+  user: User;
+}
+
+export interface UsersResponse {
+  users: User[];
+  pagination: Pagination;
+}
+
 // Investment Types
 export enum InvestmentStatus {
   PENDING = 'PENDING',
@@ -357,4 +380,142 @@ export interface Activity {
   type: 'USER_REGISTRATION' | 'INVESTMENT_CREATED' | 'LOAN_CREATED' | 'DEPOSIT' | 'WITHDRAWAL';
   description: string;
   timestamp: string;
-} 
+}
+
+// Admin Profile Types
+export interface AdminProfileUpdate {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  role?: AdminRole;
+}
+
+export interface PasswordChange {
+  currentPassword: string;
+  newPassword: string;
+}
+
+// Transaction Types
+export interface Transaction {
+  id: string;
+  type: 'DEPOSIT' | 'WITHDRAWAL' | 'LOAN_DISBURSEMENT' | 'LOAN_REPAYMENT' | 'INVESTMENT_DEPOSIT' | 'INVESTMENT_WITHDRAWAL';
+  amount: number;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  reference: string;
+  userId: string;
+  createdAt: string;
+  completedAt?: string;
+  metadata?: Record<string, unknown>;
+}
+
+// Analytics Types
+export interface FinancialAnalytics {
+  totalRevenue: number;
+  totalTransactions: number;
+  averageTransactionSize: number;
+  revenueByProduct: {
+    loans: number;
+    investments: number;
+    fees: number;
+  };
+  monthlyRevenue: Array<{
+    month: string;
+    revenue: number;
+    transactions: number;
+  }>;
+}
+
+export interface UserAnalytics {
+  totalUsers: number;
+  activeUsers: number;
+  userGrowth: number;
+  userRetention: number;
+  usersByStatus: {
+    active: number;
+    inactive: number;
+    suspended: number;
+  };
+  usersByProduct: {
+    loans: number;
+    investments: number;
+    both: number;
+  };
+}
+
+export interface ExportRequest {
+  type: 'USERS' | 'LOANS' | 'INVESTMENTS' | 'TRANSACTIONS';
+  filters?: Record<string, unknown>;
+  format: 'CSV' | 'EXCEL';
+}
+
+export interface ExportStatus {
+  id: string;
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  url?: string;
+  createdAt: string;
+  completedAt?: string;
+}
+
+// Investment Plan Types
+export interface InvestmentPlan {
+  id: string;
+  name: string;
+  description: string;
+  type: 'NAIRA' | 'FOREIGN' | 'EQUITY';
+  minAmount: number;
+  maxAmount: number;
+  interestRate: number;
+  duration: number;
+  status: 'ACTIVE' | 'INACTIVE';
+  features: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Bulk Operation Types
+export interface BulkOperation<T> {
+  items: T[];
+  operation: 'CREATE' | 'UPDATE' | 'DELETE';
+  metadata?: Record<string, unknown>;
+}
+
+export interface BulkOperationResult {
+  successful: number;
+  failed: number;
+  errors: Array<{
+    index: number;
+    error: string;
+  }>;
+}
+
+// Audit & Compliance Types
+export interface AuditLog {
+  id: string;
+  action: string;
+  adminId: string;
+  adminEmail: string;
+  targetType: string;
+  targetId: string;
+  changes: Record<string, unknown>;
+  ipAddress: string;
+  userAgent: string;
+  createdAt: string;
+}
+
+export interface ComplianceReport {
+  id: string;
+  type: 'KYC' | 'AML' | 'TRANSACTION' | 'REGULATORY';
+  status: 'PENDING' | 'COMPLETED';
+  period: {
+    start: string;
+    end: string;
+  };
+  summary: {
+    totalRecords: number;
+    flaggedItems: number;
+    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  };
+  createdAt: string;
+  completedAt?: string;
+  downloadUrl?: string;
+}

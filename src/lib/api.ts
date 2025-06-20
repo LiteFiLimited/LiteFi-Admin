@@ -7,7 +7,25 @@ import {
   DashboardActivitiesResponse, 
   LoanStats, 
   InvestmentStats, 
-  SystemHealth 
+  SystemHealth,
+  AdminProfileUpdate,
+  PasswordChange,
+  Transaction,
+  FinancialAnalytics,
+  UserAnalytics,
+  ExportRequest,
+  ExportStatus,
+  InvestmentPlan,
+  BulkOperation,
+  BulkOperationResult,
+  AuditLog,
+  ComplianceReport,
+  User,
+  UserResponse,
+  UsersResponse,
+  PaginatedResponse,
+  Loan,
+  Investment
 } from './types';
 
 interface RequestConfig {
@@ -463,28 +481,63 @@ class ApiClient {
     role?: string;
     verified?: boolean;
     isActive?: boolean;
-  }): Promise<ApiResponse<unknown>> {
+  }): Promise<ApiResponse<UsersResponse>> {
     return this.request('/admin/users', {
       method: 'GET',
       params,
     });
   }
 
-  async getUserById(id: string): Promise<ApiResponse<unknown>> {
+  async getUserById(id: string): Promise<ApiResponse<UserResponse>> {
     return this.request(`/admin/users/${id}`);
   }
 
-  async updateUser(id: string, data: unknown): Promise<ApiResponse<unknown>> {
+  async updateUser(id: string, data: Partial<User>): Promise<ApiResponse<UserResponse>> {
     return this.request(`/admin/users/${id}`, {
       method: 'PUT',
       data,
     });
   }
 
-  async updateUserStatus(id: string, isActive: boolean): Promise<ApiResponse<unknown>> {
+  async updateUserStatus(id: string, isActive: boolean): Promise<ApiResponse<{ success: boolean }>> {
     return this.request(`/admin/users/${id}/status`, {
       method: 'PUT',
       data: { isActive },
+    });
+  }
+
+  async getUserLoans(userId: string, params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<ApiResponse<PaginatedResponse<Loan>>> {
+    return this.request(`/admin/users/${userId}/loans`, {
+      method: 'GET',
+      params,
+    });
+  }
+
+  async getUserInvestments(userId: string, params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<ApiResponse<PaginatedResponse<Investment>>> {
+    return this.request(`/admin/users/${userId}/investments`, {
+      method: 'GET',
+      params,
+    });
+  }
+
+  async getUserTransactions(userId: string, params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<PaginatedResponse<Transaction>>> {
+    return this.request(`/admin/users/${userId}/transactions`, {
+      method: 'GET',
+      params,
     });
   }
 
@@ -591,6 +644,179 @@ class ApiClient {
 
   async getWalletStats(): Promise<ApiResponse<unknown>> {
     return this.request('/admin/wallet/stats');
+  }
+
+  // Admin Profile & Management
+  async getAdminProfile(id: string): Promise<ApiResponse<AdminUser>> {
+    return this.request(`/admin/profile/${id}`);
+  }
+
+  async updateAdminProfile(id: string, data: AdminProfileUpdate): Promise<ApiResponse<AdminUser>> {
+    return this.request(`/admin/profile/${id}`, {
+      method: 'PUT',
+      data,
+    });
+  }
+
+  async changeAdminPassword(id: string, data: PasswordChange): Promise<ApiResponse<void>> {
+    return this.request(`/admin/profile/${id}/change-password`, {
+      method: 'POST',
+      data,
+    });
+  }
+
+  async getAllAdmins(): Promise<ApiResponse<AdminUser[]>> {
+    return this.request('/admin/admins');
+  }
+
+  async createAdmin(data: AdminProfileUpdate & { password: string }): Promise<ApiResponse<AdminUser>> {
+    return this.request('/admin/admins', {
+      method: 'POST',
+      data,
+    });
+  }
+
+  async updateAdmin(id: string, data: AdminProfileUpdate): Promise<ApiResponse<AdminUser>> {
+    return this.request(`/admin/admins/${id}`, {
+      method: 'PUT',
+      data,
+    });
+  }
+
+  async toggleAdminStatus(id: string, isActive: boolean): Promise<ApiResponse<AdminUser>> {
+    return this.request(`/admin/admins/${id}/status`, {
+      method: 'PUT',
+      data: { isActive },
+    });
+  }
+
+  // Transaction Management
+  async getTransactions(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    type?: string;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<Transaction[]>> {
+    return this.request('/admin/transactions', {
+      method: 'GET',
+      params,
+    });
+  }
+
+  async getTransactionById(id: string): Promise<ApiResponse<Transaction>> {
+    return this.request(`/admin/transactions/${id}`);
+  }
+
+  // Analytics & Reporting
+  async getFinancialAnalytics(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<FinancialAnalytics>> {
+    return this.request('/admin/analytics/financial', {
+      method: 'GET',
+      params,
+    });
+  }
+
+  async getUserAnalytics(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<UserAnalytics>> {
+    return this.request('/admin/analytics/users', {
+      method: 'GET',
+      params,
+    });
+  }
+
+  async requestExport(data: ExportRequest): Promise<ApiResponse<{ exportId: string }>> {
+    return this.request('/admin/exports', {
+      method: 'POST',
+      data,
+    });
+  }
+
+  async getExportStatus(id: string): Promise<ApiResponse<ExportStatus>> {
+    return this.request(`/admin/exports/${id}/status`);
+  }
+
+  // Investment Plans Management
+  async getInvestmentPlans(): Promise<ApiResponse<InvestmentPlan[]>> {
+    return this.request('/admin/investments/plans');
+  }
+
+  async createInvestmentPlan(data: Omit<InvestmentPlan, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<InvestmentPlan>> {
+    return this.request('/admin/investments/plans', {
+      method: 'POST',
+      data,
+    });
+  }
+
+  async updateInvestmentPlan(id: string, data: Partial<InvestmentPlan>): Promise<ApiResponse<InvestmentPlan>> {
+    return this.request(`/admin/investments/plans/${id}`, {
+      method: 'PUT',
+      data,
+    });
+  }
+
+  async toggleInvestmentPlanStatus(id: string, isActive: boolean): Promise<ApiResponse<InvestmentPlan>> {
+    return this.request(`/admin/investments/plans/${id}/status`, {
+      method: 'PUT',
+      data: { isActive },
+    });
+  }
+
+  // Bulk Operations
+  async bulkInvestmentOperation<T>(data: BulkOperation<T>): Promise<ApiResponse<BulkOperationResult>> {
+    return this.request('/admin/investments/bulk', {
+      method: 'POST',
+      data,
+    });
+  }
+
+  async bulkUserOperation<T>(data: BulkOperation<T>): Promise<ApiResponse<BulkOperationResult>> {
+    return this.request('/admin/users/bulk', {
+      method: 'POST',
+      data,
+    });
+  }
+
+  async bulkLoanOperation<T>(data: BulkOperation<T>): Promise<ApiResponse<BulkOperationResult>> {
+    return this.request('/admin/loans/bulk', {
+      method: 'POST',
+      data,
+    });
+  }
+
+  // Audit & Compliance
+  async getAuditLogs(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    action?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<AuditLog[]>> {
+    return this.request('/admin/audit-logs', {
+      method: 'GET',
+      params,
+    });
+  }
+
+  async getComplianceReports(): Promise<ApiResponse<ComplianceReport[]>> {
+    return this.request('/admin/compliance/reports');
+  }
+
+  async generateComplianceReport(data: {
+    type: ComplianceReport['type'];
+    period: ComplianceReport['period'];
+  }): Promise<ApiResponse<ComplianceReport>> {
+    return this.request('/admin/compliance/reports', {
+      method: 'POST',
+      data,
+    });
   }
 }
 

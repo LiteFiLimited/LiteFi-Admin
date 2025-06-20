@@ -4,8 +4,8 @@ import { useState, useCallback } from "react";
 
 export interface ToastOptions {
   title: string;
-  message?: string;
-  type: "success" | "error" | "warning" | "info";
+  description?: string;
+  variant?: "default" | "destructive";
   duration?: number;
 }
 
