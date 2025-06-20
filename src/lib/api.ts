@@ -187,50 +187,33 @@ class ApiClient {
     }
   }
 
-  // Auth endpoints - Updated with better debugging and endpoint detection
+  // Admin authentication endpoints
   async login(email: string, password: string): Promise<ApiResponse<AuthResponse>> {
-    console.log('Attempting login with:', { email, baseURL: this.axiosInstance.defaults.baseURL });
+    console.log('Attempting admin login with:', { email, baseURL: this.axiosInstance.defaults.baseURL });
     
-    // Try different possible login endpoints based on your API documentation
-    const possibleEndpoints = [
-      '/auth/login',        // Backend confirmed endpoint 
-      '/admin/auth/login',  // Alternative admin login endpoint
-      '/auth/admin/login',  // Alternative admin endpoint
-      '/admin/login',       // Simple admin login
-    ];
-    
-    let lastError: unknown = null;
-    
-    for (const endpoint of possibleEndpoints) {
-      try {
-        console.log(`Trying login endpoint: ${endpoint}`);
-        
-        const response = await this.request<AuthResponse>(endpoint, {
-          method: 'POST',
-          requiresAuth: false,
-          data: { email, password },
-        });
-        
-        console.log(`Login endpoint ${endpoint} worked!`, response);
-        
-        // Store token if login successful
-        if (response.success && response.data?.token) {
-          this.setToken(response.data.token);
-          console.log('Token stored successfully');
-        }
-
-        return response;
-        
-      } catch (error) {
-        console.log(`Login endpoint ${endpoint} failed:`, error);
-        lastError = error;
-        continue; // Try next endpoint
+    try {
+      console.log('Using confirmed admin login endpoint: /auth/admin/login');
+      
+      const response = await this.request<AuthResponse>('/auth/admin/login', {
+        method: 'POST',
+        requiresAuth: false,
+        data: { email, password },
+      });
+      
+      console.log('Admin login successful!', response);
+      
+      // Store token if login successful
+      if (response.success && response.data?.accessToken) {
+        this.setToken(response.data.accessToken);
+        console.log('Token stored successfully');
       }
+
+      return response;
+      
+    } catch (error) {
+      console.error('Admin login failed:', error);
+      return this.handleApiError<AuthResponse>(error as AxiosError);
     }
-    
-    // If all endpoints failed, return the last error
-    console.error('All login endpoints failed. Last error:', lastError);
-    return this.handleApiError<AuthResponse>(lastError as AxiosError);
   }
 
   async logout(): Promise<ApiResponse<void>> {
@@ -371,6 +354,46 @@ class ApiClient {
 
   async getUnreadNotificationCount(): Promise<ApiResponse<unknown>> {
     return this.request('/admin/notifications/unread-count');
+  }
+
+  // Wallet management endpoints
+  async getDeposits(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+  }): Promise<ApiResponse<unknown>> {
+    return this.request('/admin/wallet/deposits', {
+      method: 'GET',
+      params,
+    });
+  }
+
+  async getWithdrawals(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+  }): Promise<ApiResponse<unknown>> {
+    return this.request('/admin/wallet/withdrawals', {
+      method: 'GET',
+      params,
+    });
+  }
+
+  async getPaymentChannels(): Promise<ApiResponse<unknown>> {
+    return this.request('/admin/wallet/payment-channels');
+  }
+
+  async processWithdrawal(id: string, approve: boolean, notes?: string, reference?: string): Promise<ApiResponse<unknown>> {
+    return this.request(`/admin/wallet/withdrawals/${id}/process`, {
+      method: 'POST',
+      data: { approve, notes, reference },
+    });
+  }
+
+  async getWalletStats(): Promise<ApiResponse<unknown>> {
+    return this.request('/admin/wallet/stats');
   }
 }
 

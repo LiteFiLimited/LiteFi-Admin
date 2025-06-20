@@ -100,10 +100,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       refreshInterval = setInterval(async () => {
         try {
           const response = await apiClient.refreshToken();
-          if (response.success && response.data?.token) {
-            apiClient.setToken(response.data.token);
-            if (response.data.user) {
-              setUser(response.data.user);
+          if (response.success && response.data?.accessToken) {
+            apiClient.setToken(response.data.accessToken);
+            if (response.data.admin) {
+              setUser(response.data.admin);
             }
           } else {
             // Refresh failed, log out user
@@ -143,14 +143,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('Login response:', response); // Debug logging
       
       if (response.success && response.data) {
-        setUser(response.data.user);
+        // Backend returns admin data in response.data.admin, not response.data.user
+        setUser(response.data.admin);
         
-                    // Show success toast
-            toast({
-              title: "Login Successful",
-              message: `Welcome back, ${response.data.user.firstName}!`,
-              type: "success",
-            });
+        // Show success toast
+        toast({
+          title: "Login Successful",
+          message: `Welcome back, ${response.data.admin.firstName}!`,
+          type: "success",
+        });
         
         router.push('/dashboard');
         return { success: true };

@@ -8,10 +8,136 @@ This document provides comprehensive information about all administrative API en
 
 ## 🔐 Authentication & Authorization
 
+### Admin vs User Architecture
+
+LiteFi uses a **two-table authentication system** for enterprise-level security:
+
+- **Admin Table**: Management staff with roles `SUPER_ADMIN`, `ADMIN`, `SALES`, `RISK`, `FINANCE`, `COMPLIANCE`, `COLLECTIONS`, `PORT_MGT`
+- **User Table**: Platform customers with role `USER`
+
+**IMPORTANT**: Admins and Users are completely separate entities with different authentication flows.
+
+### Admin Authentication
+
 All admin endpoints require:
 - **Bearer Token Authentication**: Include `Authorization: Bearer <jwt_token>` in request headers
-- **Admin Role**: User must have `ADMIN` or `SUPER_ADMIN` role
+- **Admin Role**: User must have a valid admin role (see roles below)
 - **Content-Type**: `application/json` for POST/PUT requests
+
+### Admin Login
+**Endpoint**: `POST /auth/admin/login`  
+**Description**: Authenticates admin users and returns JWT token
+
+**Request Body**:
+```json
+{
+  "email": "joseph.awe@litefi.ng",
+  "password": "Qwertyuiop1!"
+}
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "admin": {
+      "id": "admin_123",
+      "firstName": "Joseph",
+      "lastName": "Awe",
+      "email": "joseph.awe@litefi.ng",
+      "role": "SUPER_ADMIN",
+      "active": true,
+      "createdAt": "2023-01-01T00:00:00Z"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+  "message": "Login successful"
+}
+```
+
+### Admin Logout
+**Endpoint**: `POST /auth/admin/logout`  
+**Description**: Logs out admin user and invalidates token
+
+**Headers Required**:
+```bash
+Authorization: Bearer <jwt_token>
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "message": "Logout successful"
+}
+```
+
+### Get Admin Profile
+**Endpoint**: `GET /auth/admin/profile`  
+**Description**: Returns current authenticated admin's profile information
+
+**Headers Required**:
+```bash
+Authorization: Bearer <jwt_token>
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "admin_123",
+    "firstName": "Joseph",
+    "lastName": "Awe",
+    "email": "joseph.awe@litefi.ng",
+    "role": "SUPER_ADMIN",
+    "active": true,
+    "createdAt": "2023-01-01T00:00:00Z"
+  }
+}
+```
+
+### Token Refresh
+**Endpoint**: `POST /auth/admin/refresh`  
+**Description**: Refreshes expired JWT token
+
+**Headers Required**:
+```bash
+Authorization: Bearer <jwt_token>
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+  "message": "Token refreshed successfully"
+}
+```
+
+### Current Admin Accounts
+
+| Name | Email | Role | Password | Status |
+|------|-------|------|----------|---------|
+| Joseph Awe | joseph.awe@litefi.ng | SUPER_ADMIN | Qwertyuiop1! | ✅ Active |
+| Kayode Alao | kay@litefi.ng | SUPER_ADMIN | Qwertyuiop1! | ✅ Active |
+| Olaitan Awe | awejosepholaitan@gmail.com | ADMIN | Qwertyuiop1! | ✅ Active |
+
+### Admin Roles & Permissions
+
+| Role | Description | Access Level |
+|------|-------------|--------------|
+| **SUPER_ADMIN** | Full system access | Complete control over all features |
+| **ADMIN** | General administrative access | Most features except role management |
+| **SALES** | Customer acquisition focus | User management, applications |
+| **RISK** | Risk assessment specialist | Loan approvals, risk analysis |
+| **FINANCE** | Financial operations | Transaction monitoring, approvals |
+| **COMPLIANCE** | Regulatory compliance | Verification, compliance checks |
+| **COLLECTIONS** | Debt collection | Loan monitoring, collection activities |
+| **PORT_MGT** | Portfolio management | Investment oversight, portfolio analysis |
 
 ### Authentication Header Example
 ```bash

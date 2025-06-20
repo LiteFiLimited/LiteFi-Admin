@@ -21,8 +21,9 @@ export interface AdminUser {
 }
 
 export interface AuthResponse {
-  user: AdminUser;
-  token: string;
+  admin: AdminUser;
+  accessToken: string;
+  refreshToken: string;
 }
 
 // User Types
@@ -152,4 +153,77 @@ export interface Notification {
   message: string;
   isRead: boolean;
   createdAt: string;
+}
+
+// Wallet Management Types
+export enum DepositStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
+
+export enum WithdrawalStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED',
+}
+
+export enum PaymentMethod {
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  CARD = 'CARD',
+  USSD = 'USSD',
+  BANK_ACCOUNT = 'BANK_ACCOUNT',
+}
+
+export interface Deposit {
+  id: string;
+  reference: string;
+  amount: number;
+  status: DepositStatus;
+  paymentMethod: PaymentMethod;
+  channel: string;
+  createdAt: string;
+  completedAt?: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
+export interface Withdrawal {
+  id: string;
+  reference: string;
+  amount: number;
+  status: WithdrawalStatus;
+  paymentMethod: PaymentMethod;
+  createdAt: string;
+  processedAt?: string;
+  notes?: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
+export interface PaymentChannel {
+  id: string;
+  name: string;
+  type: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
+  description: string;
+  supportedMethods: PaymentMethod[];
+}
+
+export interface WalletStats {
+  totalDeposits: number;
+  totalWithdrawals: number;
+  pendingDeposits: number;
+  pendingWithdrawals: number;
+  totalVolume: number;
+  completedDeposits: number;
+  completedWithdrawals: number;
 } 
