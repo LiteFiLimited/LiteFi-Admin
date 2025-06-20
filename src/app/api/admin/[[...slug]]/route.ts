@@ -1,76 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
 
-// Single handler for all HTTP methods
-export function GET(req: NextRequest) {
+// Handle all HTTP methods
+export async function GET(req: NextRequest) {
   return proxyRequest(req);
 }
 
-export function POST(req: NextRequest) {
+export async function POST(req: NextRequest) {
   return proxyRequest(req);
 }
 
-export function PUT(req: NextRequest) {
+export async function PUT(req: NextRequest) {
   return proxyRequest(req);
 }
 
-export function DELETE(req: NextRequest) {
+export async function DELETE(req: NextRequest) {
   return proxyRequest(req);
 }
 
-// Helper function to proxy requests to the backend
+export async function PATCH(req: NextRequest) {
+  return proxyRequest(req);
+}
+
 async function proxyRequest(req: NextRequest) {
   try {
     // Extract the path from the URL
-    const pathParts = req.nextUrl.pathname.split('/api/admin/');
-    if (pathParts.length < 2) {
-      return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
+    const url = new URL(req.url);
+    const path = url.pathname.replace('/api', '');
+    
+    // Build the target URL
+    const targetUrl = `${BACKEND_URL}${path}${url.search}`;
+    
+    // Get the request body if it exists
+    let body: string | undefined;
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      body = await req.text();
     }
     
-    const path = pathParts[1];
-    const url = new URL(`${BACKEND_URL}/api/${path}`);
-    
-    // Copy query parameters
-    req.nextUrl.searchParams.forEach((value, key) => {
-      url.searchParams.append(key, value);
-    });
-    
     // Forward the request to the backend
-    const response = await fetch(url, {
+    const response = await fetch(targetUrl, {
       method: req.method,
       headers: {
         'Content-Type': 'application/json',
-        // Forward auth cookies if present
-        ...(req.headers.get('cookie')
-          ? { cookie: req.headers.get('cookie') || '' }
-          : {}),
+        'Authorization': req.headers.get('Authorization') || '',
+        'User-Agent': 'LiteFi-Admin-Dashboard/1.0',
       },
-      body: req.method !== 'GET' && req.method !== 'HEAD'
-        ? await req.text()
-        : undefined,
-      redirect: 'manual',
+      body: body,
     });
     
-    // Create the response with the same status and headers
-    const responseData = await response.text();
+    // Get the response data
+    const data = await response.text();
     
-    const headers = new Headers();
-    response.headers.forEach((value, key) => {
-      headers.set(key, value);
-    });
-    
-    // Return the response
-    return new NextResponse(responseData, {
+    // Return the response with the same status and headers
+    return new NextResponse(data, {
       status: response.status,
       statusText: response.statusText,
-      headers,
+      headers: {
+        'Content-Type': response.headers.get('Content-Type') || 'application/json',
+        'Cache-Control': 'no-store',
+      },
     });
   } catch (error) {
     console.error('API proxy error:', error);
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

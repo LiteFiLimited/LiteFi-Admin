@@ -17,6 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { useToast } from '@/components/ui/toast-provider';
 
 // Form schema
 const loginSchema = z.object({
@@ -28,6 +29,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const { login } = useAuth();
+  const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -36,27 +38,53 @@ export function LoginForm() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: 'awejosepholaitan@gmail.com',
+      password: 'Qwertyuiop1!',
     },
   });
 
   // Handle form submission
   const onSubmit = async (data: LoginFormValues) => {
+    console.log('LoginForm: Starting login process');
     setIsLoading(true);
     setError(null);
     
     try {
-      const success = await login(data.email, data.password);
+      console.log('LoginForm: Calling login with:', { email: data.email });
+      const result = await login(data.email, data.password);
       
-      if (!success) {
-        setError('Invalid email or password');
+      console.log('LoginForm: Login result:', result);
+      
+      if (!result.success) {
+        const errorMessage = result.error || 'Invalid email or password';
+        setError(errorMessage);
+        
+        // Log the full error for debugging
+        console.error('LoginForm: Login failed:', result);
+        
+        // Show error toast
+        toast({
+          title: "Login Failed",
+          message: errorMessage,
+          type: "error",
+        });
+      } else {
+        console.log('LoginForm: Login successful!');
+        // Success case is handled by AuthProvider (redirect to dashboard)
       }
     } catch (error) {
-      // Use void to suppress unused variable warning
-      void error;
-      setError('An error occurred. Please try again.');
+      console.error('LoginForm: Login submission error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again.';
+      setError(errorMessage);
+      
+      // Show error toast
+      toast({
+        title: "Login Error",
+        message: `Network or server error: ${errorMessage}`,
+        type: "error",
+      });
     } finally {
+      console.log('LoginForm: Login process completed');
       setIsLoading(false);
     }
   };
@@ -68,14 +96,10 @@ export function LoginForm() {
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Sign In</CardTitle>
+      <CardHeader className="text-center">
+        <CardTitle>Admin Login</CardTitle>
         <CardDescription>
-          Enter your credentials to access the admin dashboard
-          <div className="mt-2 text-xs text-muted-foreground">
-            <b>Dev credentials:</b> admin@litefi.com / superadmin@litefi.com<br/>
-            <b>Password:</b> password1
-          </div>
+          Enter your credentials to access the LiteFi admin dashboard
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -88,7 +112,7 @@ export function LoginForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="admin@litefi.com" {...field} />
+                    <Input placeholder="Enter your email" autoComplete="email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -105,6 +129,7 @@ export function LoginForm() {
                       <Input 
                         type={showPassword ? "text" : "password"} 
                         placeholder="••••••••" 
+                        autoComplete="current-password"
                         {...field} 
                       />
                     </FormControl>

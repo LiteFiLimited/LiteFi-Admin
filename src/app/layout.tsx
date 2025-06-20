@@ -1,8 +1,9 @@
-import type { Metadata, Viewport } from "next";
-import { Outfit } from "next/font/google";
-import "./globals.css";
-import { AuthProvider } from "@/components/auth/AuthProvider";
-import { Toaster } from "@/components/ui/toaster";
+import type { Metadata } from 'next'
+import { Outfit } from 'next/font/google'
+import './globals.css'
+import { AuthProvider } from '@/components/auth/AuthProvider'
+import { RouteGuard } from '@/components/auth/RouteGuard'
+import { ToastProvider } from '@/components/ui/toast-provider'
 
 const outfit = Outfit({ 
   subsets: ["latin"],
@@ -11,23 +12,12 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "LiteFi Admin Dashboard",
-  description: "Admin dashboard for the LiteFi financial platform",
+  title: 'LiteFi Admin Dashboard',
+  description: 'LiteFi financial platform administration dashboard',
   icons: {
-    icon: "/assets/logo.svg",
-    shortcut: "/assets/logo.svg",
-    apple: "/assets/logo.svg",
+    icon: '/assets/logo.svg',
   },
-  other: {
-    "format-detection": "telephone=no, date=no, email=no, address=no"
-  }
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1.0,
-  maximumScale: 1.0,
-};
+}
 
 export default function RootLayout({
   children,
@@ -35,13 +25,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={outfit.className} suppressHydrationWarning>
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
+    <html lang="en">
+      <body className={outfit.className} suppressHydrationWarning={true}>
+        <ToastProvider>
+          <AuthProvider>
+            <RouteGuard>
+              {children}
+            </RouteGuard>
+          </AuthProvider>
+        </ToastProvider>
       </body>
     </html>
-  );
+  )
 }

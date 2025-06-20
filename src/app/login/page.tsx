@@ -11,8 +11,9 @@ export default function LoginPage() {
             src="/assets/litefi.svg" 
             alt="LiteFi Admin"
             width={100}
-            height={32}
+            height={30}
             priority
+            style={{ width: 'auto', height: 'auto' }}
           />
         </div>
         
