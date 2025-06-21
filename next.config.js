@@ -1,14 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
   images: {
     unoptimized: true,
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
-    BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3000',
-    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000',
-    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'default-dev-secret-change-in-production',
+    NEXT_PUBLIC_API_URL: 'https://litefi-backend.onrender.com',
+    BACKEND_URL: 'https://litefi-backend.onrender.com',
+    NEXT_PUBLIC_BACKEND_URL: 'https://litefi-backend.onrender.com',
+    NEXTAUTH_SECRET: 'your-super-secret-jwt-key-change-this-in-production',
   },
 };
 
-module.exports = nextConfig; 
+module.exports = nextConfig;

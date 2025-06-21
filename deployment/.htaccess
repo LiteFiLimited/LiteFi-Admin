@@ -1,0 +1,19 @@
+RewriteEngine On
+RewriteBase /
+
+# Protect .env files from being accessed
+<FilesMatch "^\.env\.?">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# If the request is not for a valid file or directory
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# If the request is not for a static asset
+RewriteCond %{REQUEST_URI} !^/.*\.(html|css|js|jpg|jpeg|png|gif|svg|ico|json|woff|woff2|ttf|eot)$
+
+# Rewrite to the corresponding .html file
+RewriteRule ^([^/]+)/?$ .html [L]
+RewriteRule ^([^/]+)/([^/]+)/?$ /.html [L]
