@@ -1,164 +1,254 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
-import { AdminUser, AuthResponse, AdminRole } from '@/lib/types';
-import { AuthContextType } from '@/lib/auth';
+import { AdminRole, AdminUser } from '@/lib/types';
+import apiClient from '@/lib/api';
+import { useToast } from '@/components/ui/toast-provider';
 
-// Create the auth context
+interface AuthContextType {
+  user: AdminUser | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  checkPermission: (permission: string) => boolean;
+  hasRole: (roles: AdminRole | AdminRole[]) => boolean;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Dev credentials for testing (remove in production)
-const DEV_CREDENTIALS: Record<string, AdminUser> = {
-  'admin@litefi.com': {
-    id: 'admin-dev-1',
-    firstName: 'Admin',
-    lastName: 'User',
-    email: 'admin@litefi.com',
-    role: AdminRole.ADMIN,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  'superadmin@litefi.com': {
-    id: 'superadmin-dev-1',
-    firstName: 'Super',
-    lastName: 'Admin',
-    email: 'superadmin@litefi.com',
-    role: AdminRole.SUPER_ADMIN,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
-};
-
-// Auth provider props
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Auth provider component
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { toast } = useToast();
 
-  // Check if user is authenticated on mount
+  // Memoize logout function to avoid dependency issues
+  const logout = useCallback(async (): Promise<void> => {
+    try {
+      setIsLoading(true);
+      
+      // Call logout endpoint
+      await apiClient.logout();
+      
+      // Show logout success toast
+      toast({
+        title: "Logged Out",
+        message: "You have been successfully logged out",
+        type: "success",
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Show logout error toast
+      toast({
+        title: "Logout Error",
+        message: "There was an issue logging out, but you've been signed out locally",
+        type: "error",
+      });
+    } finally {
+      // Clear user state and redirect to login regardless of API call result
+      setUser(null);
+      setIsLoading(false);
+      router.push('/login');
+    }
+  }, [router, toast]);
+
+  // Check authentication status on mount and when token changes
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // In development, if there's no API running, use dev credentials
-        if (process.env.NODE_ENV === 'development') {
-          // Check local storage for "dev_user" - a simple dev auth mechanism
-          const devUserEmail = localStorage.getItem('dev_user');
-          if (devUserEmail && DEV_CREDENTIALS[devUserEmail]) {
-            setUser(DEV_CREDENTIALS[devUserEmail]);
+        const token = apiClient.getToken();
+        
+        if (!token) {
             setIsLoading(false);
             return;
-          }
         }
 
-        // Try to get user profile from API
-        const response = await api.request<AdminUser>('/admin/auth/profile');
+        // Verify token with backend and get user profile
+        const response = await apiClient.getProfile();
         
         if (response.success && response.data) {
           setUser(response.data);
         } else {
-          // If not authenticated and not on login page, redirect to login
-          if (window.location.pathname !== '/login') {
-            router.push('/login');
-          }
+          // Token is invalid, clear it
+          apiClient.clearToken();
+          setUser(null);
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
-        // If authentication check fails and not on login page, redirect to login
-        if (window.location.pathname !== '/login') {
-          router.push('/login');
-        }
+        console.error('Authentication check failed:', error);
+        apiClient.clearToken();
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
     checkAuth();
-  }, [router]);
+  }, []);
+
+  // Auto-refresh token periodically
+  useEffect(() => {
+    let refreshInterval: NodeJS.Timeout;
+
+    if (user && apiClient.getToken()) {
+      // Refresh token every 30 minutes
+      refreshInterval = setInterval(async () => {
+        try {
+          const response = await apiClient.refreshToken();
+          if (response.success && response.data?.accessToken) {
+            apiClient.setToken(response.data.accessToken);
+            if (response.data.admin) {
+              setUser(response.data.admin);
+            }
+          } else {
+            // Refresh failed, log out user
+            toast({
+              title: "Session Expired",
+              message: "Your session has expired. Please login again.",
+              type: "error",
+            });
+            await logout();
+          }
+        } catch (error) {
+          console.error('Token refresh failed:', error);
+          toast({
+            title: "Session Expired",
+            message: "Your session has expired. Please login again.",
+            type: "error",
+          });
+          await logout();
+        }
+      }, 30 * 60 * 1000); // 30 minutes
+    }
+
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [user, logout, toast]);
 
   // Login function
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      // For development: check hardcoded credentials first
-      if ((email === 'admin@litefi.com' || email === 'superadmin@litefi.com') && 
-          password === 'password1') {
-        
-        // Use hardcoded user data
-        const devUser = DEV_CREDENTIALS[email];
-        setUser(devUser);
-        
-        // Store the dev user email in localStorage for persistence
-        if (process.env.NODE_ENV === 'development') {
-          localStorage.setItem('dev_user', email);
-        }
-        
-        router.push('/dashboard');
-        return true;
-      }
+      setIsLoading(true);
+
+      const response = await apiClient.login(email, password);
       
-      // Regular API flow for production
-      const response = await api.login(email, password);
+      console.log('Login response:', response); // Debug logging
       
       if (response.success && response.data) {
-        const authData = response.data as AuthResponse;
-        setUser(authData.user);
+        // Backend returns admin data in response.data.admin, not response.data.user
+        setUser(response.data.admin);
+        
+        // Show success toast
+        toast({
+          title: "Login Successful",
+          message: `Welcome back, ${response.data.admin.firstName}!`,
+          type: "success",
+        });
+        
         router.push('/dashboard');
-        return true;
+        return { success: true };
+      } else {
+        const errorMessage = response.error || 'Login failed';
+        console.error('Login API error:', response.error);
+        
+        return { 
+          success: false, 
+          error: errorMessage 
+        };
       }
-      return false;
-    } catch (error) {
-      // Use void to suppress unused variable warning
-      void error;
-      console.error('Login failed:', error);
-      return false;
+    } catch (error: unknown) {
+      console.error('Login error:', error);
+      
+      let errorMessage = 'An error occurred during login';
+      
+      // Handle axios errors
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status: number; data?: { message?: string }; statusText?: string } };
+        
+        if (axiosError.response) {
+          const status = axiosError.response.status;
+          const data = axiosError.response.data;
+          
+          if (status === 401) {
+            errorMessage = data?.message || 'Invalid email or password';
+          } else if (status === 404) {
+            errorMessage = 'Login endpoint not found. Please check your backend configuration.';
+          } else if (status >= 500) {
+            errorMessage = 'Server error. Please try again later.';
+          } else {
+            errorMessage = data?.message || `Error ${status}: ${axiosError.response.statusText}`;
+          }
+        }
+      } else if (error && typeof error === 'object' && 'request' in error) {
+        // Request was made but no response received
+        errorMessage = 'Unable to connect to the server. Please check your internet connection.';
+      } else if (error instanceof Error) {
+        // Something else happened
+        errorMessage = error.message;
+      }
+      
+      return { 
+        success: false, 
+        error: errorMessage 
+      };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Logout function
-  const logout = async () => {
-    setIsLoading(true);
-    try {
-      // For dev credentials, just clear localStorage
-      if (process.env.NODE_ENV === 'development') {
-        localStorage.removeItem('dev_user');
-      }
-      
-      // No need to call API logout for dev credentials
-      if (user?.email === 'admin@litefi.com' || user?.email === 'superadmin@litefi.com') {
-        setUser(null);
-        router.push('/login');
-        return;
-      }
-      
-      await api.logout();
-      setUser(null);
-      router.push('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      // Even if logout API fails, still clear user state and redirect
-      setUser(null);
-      router.push('/login');
-    } finally {
-      setIsLoading(false);
-    }
+  // Check if user has specific permission based on role
+  const checkPermission = (permission: string): boolean => {
+    if (!user) return false;
+
+    const rolePermissions: Record<AdminRole, string[]> = {
+      [AdminRole.SUPER_ADMIN]: ['*'], // Super admin has all permissions
+      [AdminRole.ADMIN]: [
+        'viewDashboard', 'viewUsers', 'editUsers', 'viewInvestments', 
+        'editInvestments', 'viewLoans', 'editLoans', 'viewSettings', 'editSettings'
+      ],
+      [AdminRole.SALES]: ['viewDashboard', 'viewUsers', 'viewInvestments', 'viewLoans'],
+      [AdminRole.RISK]: ['viewDashboard', 'viewUsers', 'viewInvestments', 'viewLoans', 'approveLoans'],
+      [AdminRole.FINANCE]: [
+        'viewDashboard', 'viewUsers', 'viewInvestments', 'editInvestments', 
+        'approveInvestments', 'viewLoans', 'editLoans', 'approveLoans'
+      ],
+      [AdminRole.COMPLIANCE]: ['viewDashboard', 'viewUsers', 'viewInvestments', 'viewLoans'],
+      [AdminRole.COLLECTIONS]: ['viewDashboard', 'viewUsers', 'viewLoans', 'editLoans'],
+      [AdminRole.PORT_MGT]: ['viewDashboard', 'viewUsers', 'viewInvestments', 'editInvestments'],
+    };
+
+    const userPermissions = rolePermissions[user.role] || [];
+    
+    // Super admin has all permissions
+    if (userPermissions.includes('*')) return true;
+    
+    return userPermissions.includes(permission);
   };
 
-  // Context value
-  const value = {
+  // Check if user has one of the specified roles
+  const hasRole = (roles: AdminRole | AdminRole[]): boolean => {
+    if (!user) return false;
+    
+    const roleArray = Array.isArray(roles) ? roles : [roles];
+    return roleArray.includes(user.role);
+  };
+
+  const value: AuthContextType = {
     user,
     isLoading,
+    isAuthenticated: !!user,
     login,
     logout,
-    isAuthenticated: !!user,
+    checkPermission,
+    hasRole,
   };
 
   return (
@@ -168,13 +258,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 }
 
-// Custom hook to use auth context
 export function useAuth() {
   const context = useContext(AuthContext);
-  
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  
   return context;
 } 

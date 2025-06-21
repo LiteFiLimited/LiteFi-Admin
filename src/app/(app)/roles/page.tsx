@@ -3,14 +3,17 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { AdminRole } from '@/lib/types';
 import { AddAdminModal } from '@/components/roles/AddAdminModal';
 import { EditAdminModal, type AdminUser, type EditAdminFormValues } from '@/components/roles/EditAdminModal';
-import { Loader2, Power } from 'lucide-react';
+import { UserCheck, UserX, Users } from 'lucide-react';
+import { useToast } from '@/components/ui/toast-provider';
 
 export default function RolesPage() {
+  const { toast } = useToast();
+  
   // State for admin users data
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([
     {
@@ -164,8 +167,22 @@ export default function RolesPage() {
       };
       
       setAdminUsers(prev => [...prev, newAdmin]);
+      
+      // Show success toast
+      toast({
+        title: "Admin Added Successfully",
+        message: `${data.firstName} ${data.lastName} has been added as ${getRoleDisplayName(data.role)}`,
+        type: "success",
+      });
     } catch (error) {
       console.error('Error adding admin:', error);
+      
+      // Show error toast
+      toast({
+        title: "Error Adding Admin",
+        message: "There was an error adding the admin. Please try again.",
+        type: "error",
+      });
     }
   };
 
@@ -184,8 +201,22 @@ export default function RolesPage() {
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Show success toast
+      toast({
+        title: "Admin Updated Successfully",
+        message: `${data.firstName} ${data.lastName}'s information has been updated`,
+        type: "success",
+      });
     } catch (error) {
       console.error('Error editing admin:', error);
+      
+      // Show error toast
+      toast({
+        title: "Error Updating Admin",
+        message: "There was an error updating the admin. Please try again.",
+        type: "error",
+      });
     } finally {
       setProcessingAdminId(null);
     }
@@ -206,18 +237,82 @@ export default function RolesPage() {
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Show success toast
+      toast({
+        title: `Admin ${!admin.isActive ? 'Activated' : 'Deactivated'}`,
+        message: `${admin.firstName} ${admin.lastName} has been ${!admin.isActive ? 'activated' : 'deactivated'}`,
+        type: "success",
+      });
     } catch (error) {
       console.error('Error toggling admin status:', error);
+      
+      // Show error toast
+      toast({
+        title: "Error Updating Status",
+        message: "There was an error updating the admin status. Please try again.",
+        type: "error",
+      });
     } finally {
       setProcessingAdminId(null);
     }
   };
+
+  const activeAdmins = adminUsers.filter(admin => admin.isActive).length;
+  const totalAdmins = adminUsers.length;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Admin Roles</h1>
         <AddAdminModal onAddAdmin={handleAddAdmin} />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <Users className="w-4 h-4 mr-2" />
+              Total Admins
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalAdmins}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              All admin accounts
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <UserCheck className="w-4 h-4 mr-2" />
+              Active Admins
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeAdmins}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Currently active
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <UserX className="w-4 h-4 mr-2" />
+              Inactive Admins
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalAdmins - activeAdmins}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Currently inactive
+            </p>
+          </CardContent>
+        </Card>
       </div>
       
       <Card>
@@ -249,26 +344,18 @@ export default function RolesPage() {
                   <TableCell>{getRoleBadge(admin.role)}</TableCell>
                   <TableCell>{formatDate(admin.createdAt)}</TableCell>
                   <TableCell>{getStatusBadge(admin.isActive)}</TableCell>
-                  <TableCell className="text-right space-x-2">
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
                     <EditAdminModal 
                       admin={admin} 
                       onEditAdmin={handleEditAdmin} 
                     />
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className={admin.isActive ? 'text-red-500' : 'text-green-500'}
-                      onClick={() => handleToggleActive(admin)}
+                      <Switch
+                        checked={admin.isActive}
+                        onCheckedChange={() => handleToggleActive(admin)}
                       disabled={processingAdminId === admin.id}
-                    >
-                      {processingAdminId === admin.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          {admin.isActive ? 'Deactivate' : 'Activate'} <Power className="h-4 w-4 ml-1" />
-                        </>
-                      )}
-                    </Button>
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

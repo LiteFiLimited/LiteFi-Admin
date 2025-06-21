@@ -1,6 +1,6 @@
 # LiteFi Admin Dashboard
 
-A modern, responsive admin dashboard for the LiteFi financial platform built with Next.js 15, shadcn UI, and TypeScript.
+A modern, responsive admin dashboard for the LiteFi financial platform built with Next.js 15, shadcn UI, and TypeScript with secure authentication and API integration.
 
 ## Overview
 
@@ -8,6 +8,7 @@ The LiteFi Admin Dashboard is a comprehensive interface for financial administra
 
 ## Features
 
+- **Secure Authentication**: JWT-based authentication with automatic token refresh and role-based access control
 - **Modern UI**: Clean, responsive design using shadcn UI components and Tailwind CSS
 - **Role-Based Access Control**: Different views and permissions based on admin roles
 - **Dashboard Analytics**: Visual representation of key metrics
@@ -18,14 +19,16 @@ The LiteFi Admin Dashboard is a comprehensive interface for financial administra
 - **Admin Management**: Create and manage admin users with different permission levels
 - **Notification System**: Real-time notifications for important events and updates
 - **Responsive Design**: Optimized for desktop and mobile devices
+- **API Integration**: Direct integration with LiteFi backend API endpoints
 
 ## Recent Enhancements
 
-- **Custom Branding**: Implemented custom LiteFi SVG logo throughout the application
-- **Admin User Management**: Added functionality to create, edit, and activate/deactivate admin users
-- **Notification System**: Implemented dropdown and toast notifications with read/unread status
-- **Improved UX**: Enhanced user experience with loading states, error handling, and visual feedback
-- **TypeScript Improvements**: Resolved type errors and improved type safety throughout the codebase
+- **Secure API Integration**: Implemented direct integration with LiteFi backend API
+- **JWT Authentication**: Secure token-based authentication with automatic refresh
+- **Route Guards**: Client-side route protection with permission-based access control
+- **Environment Configuration**: Proper environment variable management for different deployment stages
+- **Error Handling**: Comprehensive error handling for API calls and authentication failures
+- **Token Management**: Secure token storage and automatic cleanup on logout
 
 ## Tech Stack
 
@@ -33,10 +36,10 @@ The LiteFi Admin Dashboard is a comprehensive interface for financial administra
 - **UI Library**: shadcn UI (built on Radix UI primitives)
 - **Styling**: Tailwind CSS
 - **State Management**: React Context API
+- **Authentication**: JWT with secure token management
 - **Form Handling**: React Hook Form with zod validation
 - **Icons**: Lucide React
-- **Authentication**: JWT with secure HTTP-only cookies
-- **API Integration**: Custom API client with Next.js API routes
+- **API Integration**: Direct backend API integration with comprehensive error handling
 
 ## Project Structure
 
@@ -85,7 +88,8 @@ The LiteFi Admin Dashboard is a comprehensive interface for financial administra
 ### Prerequisites
 
 - Node.js 18+ and npm/yarn
-- LiteFi Backend API running (or mock API)
+- LiteFi Backend API access
+- Admin credentials provided by system administrator
 
 ### Installation
 
@@ -101,11 +105,22 @@ The LiteFi Admin Dashboard is a comprehensive interface for financial administra
    ```
 
 3. Set up environment variables:
-   Create a `.env.local` file with the following variables:
+   Copy the example environment file and configure:
+   ```bash
+   cp .env.example .env.local
    ```
+   
+   Update `.env.local` with your configuration:
+   ```
+   # API Configuration
    NEXT_PUBLIC_API_URL=http://localhost:3000/api
    BACKEND_URL=http://localhost:3000
-   NEXTAUTH_SECRET=your-secret-key
+   
+   # Authentication
+   NEXTAUTH_SECRET=your-super-secret-jwt-key-change-this-in-production
+   
+   # Environment
+   NODE_ENV=development
    ```
 
 4. Run the development server:
@@ -115,49 +130,88 @@ The LiteFi Admin Dashboard is a comprehensive interface for financial administra
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Key Components
+## Authentication & Security
 
-### Authentication
+### Login Process
 
-The application uses a custom AuthProvider component to manage authentication state. It provides login/logout functionality and user information throughout the app.
+1. Navigate to the login page
+2. Enter your admin credentials (provided by system administrator)
+3. The system will:
+   - Validate credentials with the backend API
+   - Store JWT token securely
+   - Redirect to the dashboard based on your role
 
-### Responsive Layout
+### Security Features
 
-The dashboard features a responsive layout with:
-- A collapsible sidebar for navigation
-- A header with search, notifications, and user profile
-- Content area that adapts to different screen sizes
+- **JWT Tokens**: Secure token-based authentication
+- **Automatic Token Refresh**: Tokens are refreshed every 30 minutes
+- **Route Protection**: Client-side route guards protect all admin pages
+- **Role-Based Permissions**: Access control based on admin roles
+- **Secure Token Storage**: Tokens stored in localStorage with automatic cleanup
+- **Error Handling**: Comprehensive error handling for security events
 
-### Notification System
+### Admin Roles & Permissions
 
-The notification system includes:
-- A dropdown menu in the header showing recent notifications
-- Status indicators for unread notifications
-- Toast notifications for real-time alerts
-- Ability to mark notifications as read
+- **SUPER_ADMIN**: Complete access to all features
+- **ADMIN**: General administrative access
+- **SALES**: Customer acquisition and initial applications
+- **RISK**: Loan application risk assessment
+- **FINANCE**: Financial approvals and monitoring
+- **COMPLIANCE**: Regulatory compliance verification
+- **COLLECTIONS**: Loan repayment collection
+- **PORT_MGT**: Investment portfolio management
 
-### Admin Management
+## API Integration
 
-The roles page provides functionality to:
-- View all admin users
-- Add new admin users with specific roles
-- Edit existing admin details
-- Activate or deactivate admin accounts
+The dashboard integrates directly with the LiteFi backend API using the endpoints documented in `docs/ADMIN_API_ENDPOINTS.md`. Key integration features:
 
-### UI Components
-
-The application uses shadcn UI components for a consistent design language:
-- Modals for forms and confirmations
-- Dropdown menus for actions
-- Toast notifications for alerts
-- Data tables for displaying information
-- Form inputs with validation
+- **Authentication Endpoints**: Login, logout, token refresh, profile management
+- **Dashboard Data**: Real-time statistics and analytics
+- **User Management**: CRUD operations for user accounts
+- **Investment Management**: Investment tracking and approval workflows
+- **Loan Management**: Loan processing and monitoring
+- **Notification System**: Real-time notification delivery
 
 ## Development Guidelines
 
-- Use TypeScript for all new components and functionality
-- Follow the established component patterns
-- Implement proper error handling and loading states
-- Ensure responsive design for all screens
-- Write clean, maintainable code with appropriate comments
-- Test thoroughly before submitting pull requests
+- **Authentication Required**: All API calls require valid JWT tokens
+- **Error Handling**: Implement proper error handling for all API interactions
+- **Permission Checks**: Use the `checkPermission` and `hasRole` functions for access control
+- **Token Management**: The `apiClient` handles token management automatically
+- **Type Safety**: Use TypeScript for all new components and functionality
+- **Responsive Design**: Ensure all components work on mobile and desktop
+- **Security**: Never expose sensitive data or tokens in client-side code
+
+## Deployment
+
+1. Build the application:
+   ```bash
+   npm run build
+   ```
+
+2. Configure production environment variables in your deployment platform
+
+3. Deploy using your preferred hosting platform (Vercel, Netlify, Docker, etc.)
+
+## Environment Variables
+
+- `NEXT_PUBLIC_API_URL`: Frontend API URL (for client-side routing)
+- `BACKEND_URL`: Backend API base URL
+- `NEXTAUTH_SECRET`: JWT secret key (must be secure in production)
+- `NODE_ENV`: Environment (development/production)
+
+## Security Considerations
+
+- All JWT tokens are validated on each request
+- Tokens automatically expire and refresh
+- Route guards prevent unauthorized access
+- Role-based permissions limit feature access
+- API endpoints validate admin roles on the backend
+- All forms implement proper validation
+- Error messages don't expose sensitive information
+
+## Support
+
+- **API Documentation**: See `docs/ADMIN_API_ENDPOINTS.md`
+- **Status Page**: Contact system administrator for API status
+- **Support**: Contact technical support for access issues

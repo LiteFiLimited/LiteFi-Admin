@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Bell, Check, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/toast-provider';
 
 // Sample notifications for demo
 const sampleNotifications: Notification[] = [
@@ -73,13 +73,10 @@ export function NotificationDropdown() {
   
   // Mark all as read
   const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, isRead: true }))
-    );
-    
+    setNotifications(notifications.map(notif => ({ ...notif, isRead: true })));
     toast({
-      title: "Notifications",
-      description: "All notifications marked as read",
+      title: "All notifications marked as read",
+      type: "success",
     });
   };
   

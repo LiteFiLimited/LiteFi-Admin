@@ -2,41 +2,19 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { PlanModal, type PlanData as ModalPlanData } from '@/components/settings/PlanModal';
-import { ProductModal, type ProductData as ModalProductData } from '@/components/settings/ProductModal';
-import { toast } from "@/components/ui/use-toast";
-import { EyeIcon, PencilIcon } from "lucide-react";
-
-// Types for our data
-interface PlanData {
-  id: string;
-  name: string;
-  duration: number;
-  minAmount: number;
-  interestRate: number;
-  isActive: boolean;
-}
-
-interface ProductData {
-  id: string;
-  name: string;
-  duration: number;
-  minAmount: number;
-  interestRate: number;
-  isActive: boolean;
-}
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Edit, Eye } from 'lucide-react';
+import { PlanModal, type PlanData } from '@/components/settings/PlanModal';
+import { ProductModal, type ProductData } from '@/components/settings/ProductModal';
+import { useToast } from '@/components/ui/toast-provider';
 
 export default function SettingsPage() {
+  const { toast } = useToast();
+  
   // Sample plan and product data
   const [plans, setPlans] = useState<PlanData[]>([
     { id: '1', name: 'Growth Fund', duration: 12, minAmount: 5000, interestRate: 5.2, isActive: true },
@@ -96,25 +74,28 @@ export default function SettingsPage() {
     setPlanModalOpen(true);
   };
 
-  const handleSavePlan = (planData: ModalPlanData) => {
-    if (modalMode === 'add') {
-      // Create new plan with a unique ID
-      const newPlan = { ...planData, id: Date.now().toString() };
-      setPlans([...plans, newPlan]);
-      toast({
-        title: "Plan Created",
-        description: "New investment plan has been created successfully.",
-        variant: "default",
-      });
-    } else {
-      // Update existing plan
-      setPlans(plans.map(p => p.id === selectedPlan?.id ? { ...planData, id: p.id } : p));
+  const handleSavePlan = (planData: PlanData) => {
+    if (selectedPlan && selectedPlan.id) {
+      // Edit existing plan
+      const updatedPlan = { ...planData, id: selectedPlan.id };
+      setPlans(plans.map(plan => plan.id === selectedPlan.id ? updatedPlan : plan));
       toast({
         title: "Plan Updated",
-        description: "Investment plan has been updated successfully.",
-        variant: "default",
+        message: "Investment plan has been updated successfully",
+        type: "success",
+      });
+    } else {
+      // Add new plan - ensure it has an id
+      const newPlan = { ...planData, id: `plan${plans.length + 1}` };
+      setPlans([...plans, newPlan]);
+      toast({
+        title: "Plan Added",
+        message: "New investment plan has been added successfully",
+        type: "success",
       });
     }
+    setSelectedPlan(null);
+    setModalMode('add');
     setPlanModalOpen(false);
   };
 
@@ -137,46 +118,49 @@ export default function SettingsPage() {
     setProductModalOpen(true);
   };
 
-  const handleSaveProduct = (productData: ModalProductData) => {
-    if (modalMode === 'add') {
-      // Create new product with a unique ID
-      const newProduct = { ...productData, id: Date.now().toString() };
-      setProducts([...products, newProduct]);
-      toast({
-        title: "Product Created", 
-        description: "New loan product has been created successfully.",
-        variant: "default",
-      });
-    } else {
-      // Update existing product
-      setProducts(products.map(p => p.id === selectedProduct?.id ? { ...productData, id: p.id } : p));
+  const handleSaveProduct = (productData: ProductData) => {
+    if (selectedProduct && selectedProduct.id) {
+      // Edit existing product
+      const updatedProduct = { ...productData, id: selectedProduct.id };
+      setProducts(products.map(product => product.id === selectedProduct.id ? updatedProduct : product));
       toast({
         title: "Product Updated",
-        description: "Loan product has been updated successfully.",
-        variant: "default",
+        message: "Loan product has been updated successfully",
+        type: "success",
+      });
+    } else {
+      // Add new product - ensure it has an id
+      const newProduct = { ...productData, id: `product${products.length + 1}` };
+      setProducts([...products, newProduct]);
+      toast({
+        title: "Product Added",
+        message: "New loan product has been added successfully",
+        type: "success",
       });
     }
+    setSelectedProduct(null);
+    setModalMode('add');
     setProductModalOpen(false);
   };
 
   // Update general settings save handler
   const handleSaveGeneralSettings = () => {
-    setGeneralEditMode(false);
     toast({
       title: "Settings Saved",
-      description: "General settings have been updated successfully.",
-      variant: "default",
+      message: "General settings have been saved successfully",
+      type: "success",
     });
+    setGeneralEditMode(false);
   };
 
   // Update notification settings save handler
   const handleSaveNotificationSettings = () => {
-    setNotificationsEditMode(false);
     toast({
-      title: "Notifications Updated",
-      description: "Notification preferences have been saved.",
-      variant: "default",
+      title: "Settings Saved",
+      message: "Notification settings have been saved successfully",
+      type: "success",
     });
+    setNotificationsEditMode(false);
   };
 
   return (
@@ -209,7 +193,7 @@ export default function SettingsPage() {
                   size="sm" 
                   onClick={() => setGeneralEditMode(true)}
                 >
-                  Edit <PencilIcon className="h-4 w-4 ml-1" />
+                  Edit <Edit className="h-4 w-4 ml-1" />
                 </Button>
               )}
             </CardHeader>
@@ -262,7 +246,7 @@ export default function SettingsPage() {
                   <div key={plan.id} className="border p-4 rounded-md">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
+                        <Switch 
                           id={`active-${plan.id}`} 
                           defaultChecked={plan.isActive} 
                           disabled
@@ -271,10 +255,10 @@ export default function SettingsPage() {
                       </div>
                       <div className="space-x-2">
                         <Button variant="outline" size="sm" onClick={() => handleViewPlan(plan)}>
-                          View <EyeIcon className="h-4 w-4 ml-1" />
+                          View <Eye className="h-4 w-4 ml-1" />
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handleEditPlan(plan)}>
-                          Edit <PencilIcon className="h-4 w-4 ml-1" />
+                          Edit <Edit className="h-4 w-4 ml-1" />
                         </Button>
                       </div>
                     </div>
@@ -347,7 +331,7 @@ export default function SettingsPage() {
                   <div key={product.id} className="border p-4 rounded-md">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
+                        <Switch 
                           id={`active-${product.id}`} 
                           defaultChecked={product.isActive} 
                           disabled
@@ -356,10 +340,10 @@ export default function SettingsPage() {
                       </div>
                       <div className="space-x-2">
                         <Button variant="outline" size="sm" onClick={() => handleViewProduct(product)}>
-                          View <EyeIcon className="h-4 w-4 ml-1" />
+                          View <Eye className="h-4 w-4 ml-1" />
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handleEditProduct(product)}>
-                          Edit <PencilIcon className="h-4 w-4 ml-1" />
+                          Edit <Edit className="h-4 w-4 ml-1" />
                         </Button>
                       </div>
                     </div>
@@ -430,7 +414,7 @@ export default function SettingsPage() {
                   size="sm" 
                   onClick={() => setNotificationsEditMode(true)}
                 >
-                  Edit <PencilIcon className="h-4 w-4 ml-1" />
+                  Edit <Edit className="h-4 w-4 ml-1" />
                 </Button>
               )}
             </CardHeader>
@@ -439,7 +423,7 @@ export default function SettingsPage() {
                 {notificationSettings.map((setting) => (
                   <div key={setting.id} className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
+                      <Switch 
                         id={setting.id} 
                         defaultChecked={setting.defaultChecked} 
                         disabled={!notificationsEditMode}

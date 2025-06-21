@@ -11,6 +11,7 @@ import {
   Users,
   LineChart,
   Landmark,
+  Wallet,
   Settings,
   ShieldCheck,
   LogOut,
@@ -44,6 +45,7 @@ export function AppSidebar() {
     viewUsers: false,
     viewInvestments: false,
     viewLoans: false,
+    viewWallet: false,
     viewSettings: false,
     viewRoles: false
   };
@@ -73,6 +75,12 @@ export function AppSidebar() {
       href: '/loans',
       icon: Landmark,
       isVisible: permissions.viewLoans
+    },
+    {
+      name: 'Wallet',
+      href: '/wallet',
+      icon: Wallet,
+      isVisible: permissions.viewWallet
     },
     {
       name: 'Settings',
