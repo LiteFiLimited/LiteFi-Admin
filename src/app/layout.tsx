@@ -13,6 +13,11 @@ const outfit = Outfit({
 export const metadata = {
   title: 'LiteFi Admin Dashboard',
   description: 'Administrative dashboard for LiteFi financial services',
+  icons: {
+    icon: '/assets/logo.svg',
+    shortcut: '/assets/logo.svg',
+    apple: '/assets/logo.svg',
+  },
 };
 
 export default function RootLayout({
