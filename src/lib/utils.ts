@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format a date string to a more readable format
+ * Format a date string to a more readable format (hydration-safe)
  * @param dateString ISO date string
  * @param options Intl.DateTimeFormatOptions
  * @returns Formatted date string
@@ -21,7 +21,30 @@ export function formatDate(
 ): string {
   try {
     const date = new Date(dateString);
+    
+    // For hydration safety, use a consistent format that doesn't depend on locale
+    if (typeof window === 'undefined') {
+      // Server-side: use consistent format
+      return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    }
+    
+    // Client-side: use Intl for better formatting
     return new Intl.DateTimeFormat("en-US", options).format(date);
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return dateString;
+  }
+}
+
+/**
+ * Format a date string to a simple readable format (always consistent)
+ * @param dateString ISO date string
+ * @returns Formatted date string in YYYY-MM-DD format
+ */
+export function formatDateSafe(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD format
   } catch (error) {
     console.error("Error formatting date:", error);
     return dateString;

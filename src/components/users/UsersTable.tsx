@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, UserStatus } from '@/lib/types';
 import {
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDate } from '@/lib/utils';
+import { formatDateSafe } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +32,12 @@ interface UsersTableProps {
 export function UsersTable({ users, onStatusChange }: UsersTableProps) {
   const router = useRouter();
   const [processing, setProcessing] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted to prevent hydration issues
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Handle status change
   const handleStatusChange = async (id: string, isActive: boolean) => {
@@ -55,6 +61,24 @@ export function UsersTable({ users, onStatusChange }: UsersTableProps) {
   // Edit user
   const editUser = (id: string) => {
     router.push(`/users/${id}/edit`);
+  };
+
+  // Format date for display
+  const formatDisplayDate = (dateString: string) => {
+    if (!mounted) {
+      return formatDateSafe(dateString);
+    }
+    
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat("en-US", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }).format(date);
+    } catch {
+      return formatDateSafe(dateString);
+    }
   };
 
   return (
@@ -102,7 +126,7 @@ export function UsersTable({ users, onStatusChange }: UsersTableProps) {
                 </Badge>
               )}
             </TableCell>
-            <TableCell>{formatDate(user.createdAt)}</TableCell>
+            <TableCell>{formatDisplayDate(user.createdAt)}</TableCell>
             <TableCell className="text-right">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

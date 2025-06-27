@@ -1,7 +1,14 @@
 import './globals.css';
+import { Outfit } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { AuthProvider } from '@/components/auth/AuthProvider';
+
+const outfit = Outfit({ 
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-outfit',
+});
 
 export const metadata = {
   title: 'LiteFi Admin Dashboard',
@@ -15,14 +22,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script src="/runtime-config.js"></script>
-      </head>
-      <body>
+      <body className={outfit.className} suppressHydrationWarning>
         <ThemeProvider>
-          <AuthProvider>
-            <ToastProvider>{children}</ToastProvider>
-          </AuthProvider>
+          <ToastProvider>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>
