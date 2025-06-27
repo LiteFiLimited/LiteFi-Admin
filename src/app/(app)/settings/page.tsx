@@ -306,8 +306,8 @@ export default function SettingsPage() {
           {/* Plan Modal */}
           <PlanModal 
             isOpen={planModalOpen}
-            onClose={() => setPlanModalOpen(false)}
-            onSave={handleSavePlan}
+            onCloseAction={() => setPlanModalOpen(false)}
+            onSaveAction={handleSavePlan}
             plan={selectedPlan}
             mode={modalMode}
           />
@@ -391,8 +391,8 @@ export default function SettingsPage() {
           {/* Product Modal */}
           <ProductModal 
             isOpen={productModalOpen}
-            onClose={() => setProductModalOpen(false)}
-            onSave={handleSaveProduct}
+            onCloseAction={() => setProductModalOpen(false)}
+            onSaveAction={handleSaveProduct}
             product={selectedProduct}
             mode={modalMode}
           />

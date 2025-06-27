@@ -25,8 +25,8 @@ export interface ProductData {
 
 interface ProductModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  onSave: (product: ProductData) => void;
+  onCloseAction: () => void;
+  onSaveAction: (product: ProductData) => void;
   product?: ProductData | null;
   mode: 'add' | 'edit' | 'view';
 }
@@ -39,7 +39,7 @@ const defaultProduct: ProductData = {
   isActive: true
 };
 
-export function ProductModal({ isOpen, onClose, onSave, product = null, mode = 'add' }: ProductModalProps) {
+export function ProductModal({ isOpen, onCloseAction, onSaveAction, product = null, mode = 'add' }: ProductModalProps) {
   const [formData, setFormData] = useState<ProductData>(defaultProduct);
   const [isEditing, setIsEditing] = useState(mode === 'add' || mode === 'edit');
 
@@ -73,7 +73,7 @@ export function ProductModal({ isOpen, onClose, onSave, product = null, mode = '
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSaveAction(formData);
   };
 
   const handleEditClick = () => {
@@ -85,7 +85,7 @@ export function ProductModal({ isOpen, onClose, onSave, product = null, mode = '
                'Loan Product Details';
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onCloseAction}>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -169,7 +169,7 @@ export function ProductModal({ isOpen, onClose, onSave, product = null, mode = '
               </Button>
             ) : (
               <>
-                <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto order-2 sm:order-1">
+                <Button type="button" variant="outline" onClick={onCloseAction} className="w-full sm:w-auto order-2 sm:order-1">
                   Cancel
                 </Button>
                 <Button type="submit" className="w-full sm:w-auto order-1 sm:order-2">

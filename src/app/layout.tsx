@@ -1,40 +1,36 @@
-import type { Metadata } from 'next'
-import { Outfit } from 'next/font/google'
-import './globals.css'
-import { AuthProvider } from '@/components/auth/AuthProvider'
-import { RouteGuard } from '@/components/auth/RouteGuard'
-import { ToastProvider } from '@/components/ui/toast-provider'
+import './globals.css';
+import { Outfit } from 'next/font/google';
+import { ThemeProvider } from '@/components/theme-provider';
+import { ToastProvider } from '@/components/ui/toast-provider';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 
 const outfit = Outfit({ 
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-outfit",
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-outfit',
 });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'LiteFi Admin Dashboard',
-  description: 'LiteFi financial platform administration dashboard',
-  icons: {
-    icon: '/assets/logo.svg',
-  },
-}
+  description: 'Administrative dashboard for LiteFi financial services',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={outfit.className} suppressHydrationWarning={true}>
-        <ToastProvider>
-          <AuthProvider>
-            <RouteGuard>
-              {children}
-            </RouteGuard>
-          </AuthProvider>
-        </ToastProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={outfit.className} suppressHydrationWarning>
+        <ThemeProvider>
+          <ToastProvider>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }

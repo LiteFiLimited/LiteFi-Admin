@@ -25,8 +25,8 @@ export interface PlanData {
 
 interface PlanModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  onSave: (plan: PlanData) => void;
+  onCloseAction: () => void;
+  onSaveAction: (plan: PlanData) => void;
   plan?: PlanData | null;
   mode: 'add' | 'edit' | 'view';
 }
@@ -39,7 +39,7 @@ const defaultPlan: PlanData = {
   isActive: true
 };
 
-export function PlanModal({ isOpen, onClose, onSave, plan = null, mode = 'add' }: PlanModalProps) {
+export function PlanModal({ isOpen, onCloseAction, onSaveAction, plan = null, mode = 'add' }: PlanModalProps) {
   const [formData, setFormData] = useState<PlanData>(defaultPlan);
   const [isEditing, setIsEditing] = useState(mode === 'add' || mode === 'edit');
 
@@ -73,7 +73,7 @@ export function PlanModal({ isOpen, onClose, onSave, plan = null, mode = 'add' }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSaveAction(formData);
   };
 
   const handleEditClick = () => {
@@ -85,7 +85,7 @@ export function PlanModal({ isOpen, onClose, onSave, plan = null, mode = 'add' }
                'Investment Plan Details';
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onCloseAction}>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -169,7 +169,7 @@ export function PlanModal({ isOpen, onClose, onSave, plan = null, mode = 'add' }
               </Button>
             ) : (
               <>
-                <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto order-2 sm:order-1">
+                <Button type="button" variant="outline" onClick={onCloseAction} className="w-full sm:w-auto order-2 sm:order-1">
                   Cancel
                 </Button>
                 <Button type="submit" className="w-full sm:w-auto order-1 sm:order-2">

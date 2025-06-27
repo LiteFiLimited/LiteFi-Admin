@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { User, UserStatus, Loan, Investment, Transaction } from '@/lib/types';
 import { ArrowLeft, CheckCircle, XCircle, UserCheck, Calendar, Phone, Mail } from 'lucide-react';
-import useToast from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/toast-provider';
 import apiClient from '@/lib/api';
 
 export default function UserDetailPage() {
@@ -39,16 +39,16 @@ export default function UserDetailPage() {
       } else {
         toast({
           title: "Error",
-          description: response.error || "Failed to load user details",
-          variant: "destructive",
+          message: response.error || "Failed to load user details",
+          type: "error",
         });
       }
     } catch (error) {
       console.error('Error loading user:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred while loading user details",
-        variant: "destructive",
+        message: "An unexpected error occurred while loading user details",
+        type: "error",
       });
     } finally {
       setIsLoading(false);
@@ -117,7 +117,8 @@ export default function UserDetailPage() {
       if (response.success) {
         toast({
           title: "Success",
-          description: `User status updated to ${isActive ? 'active' : 'inactive'}`,
+          message: `User status updated to ${isActive ? 'active' : 'inactive'}`,
+          type: "success",
         });
         
         // Refresh user data
@@ -125,16 +126,16 @@ export default function UserDetailPage() {
       } else {
         toast({
           title: "Error",
-          description: response.error || "Failed to update user status",
-          variant: "destructive",
+          message: response.error || "Failed to update user status",
+          type: "error",
         });
       }
     } catch (error) {
       console.error('Error updating user status:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred while updating user status",
-        variant: "destructive",
+        message: "An unexpected error occurred while updating user status",
+        type: "error",
       });
     } finally {
       setIsUpdatingStatus(false);

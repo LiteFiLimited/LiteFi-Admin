@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserStatus } from '@/lib/types';
 import { ArrowLeft } from 'lucide-react';
-import useToast from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/toast-provider';
 import apiClient from '@/lib/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -58,7 +58,8 @@ export default function UserEditPage() {
       if (response.success) {
         toast({
           title: "Success",
-          description: "User information updated successfully",
+          message: "User information updated successfully",
+          type: "success",
         });
         
         // Navigate back to user details
@@ -66,16 +67,16 @@ export default function UserEditPage() {
       } else {
         toast({
           title: "Error",
-          description: response.error || "Failed to update user",
-          variant: "destructive",
+          message: response.error || "Failed to update user",
+          type: "error",
         });
       }
     } catch (error) {
       console.error('Error updating user:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred while updating user",
-        variant: "destructive",
+        message: "An unexpected error occurred while updating user",
+        type: "error",
       });
     } finally {
       setIsSaving(false);
@@ -102,14 +103,16 @@ export default function UserEditPage() {
         } else {
           toast({
             title: "Error",
-            description: response.error || "Failed to load user details",
+            message: response.error || "Failed to load user details",
+            type: "error",
           });
         }
       } catch (error) {
         console.error('Error loading user:', error);
         toast({
           title: "Error",
-          description: "An unexpected error occurred while loading user details",
+          message: "An unexpected error occurred while loading user details",
+          type: "error",
         });
       } finally {
         setIsLoading(false);

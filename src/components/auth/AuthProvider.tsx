@@ -168,7 +168,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Login error:', error);
       
       let errorMessage = 'An error occurred during login';
-      
+
       // Handle axios errors
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status: number; data?: { message?: string }; statusText?: string } };
@@ -185,7 +185,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             errorMessage = 'Server error. Please try again later.';
           } else {
             errorMessage = data?.message || `Error ${status}: ${axiosError.response.statusText}`;
-          }
+      }
         }
       } else if (error && typeof error === 'object' && 'request' in error) {
         // Request was made but no response received
