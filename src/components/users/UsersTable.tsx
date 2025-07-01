@@ -116,7 +116,7 @@ export function UsersTable({ users, onStatusChange }: UsersTableProps) {
               </Badge>
             </TableCell>
             <TableCell>
-              {user.isVerified ? (
+              {user.verified ? (
                 <Badge variant="outline" className="bg-green-50 text-green-700">
                   Verified
                 </Badge>

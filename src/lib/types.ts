@@ -16,8 +16,43 @@ export interface AdminUser {
   lastName: string;
   email: string;
   role: AdminRole;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+// Create admin request
+export interface CreateAdminRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: AdminRole;
+  isActive?: boolean;
+}
+
+// Update admin request
+export interface UpdateAdminRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  role?: AdminRole;
+  isActive?: boolean;
+}
+
+// Admin status update request
+export interface UpdateAdminStatusRequest {
+  isActive: boolean;
+}
+
+// Admin response types
+export interface AdminResponse {
+  admin: AdminUser;
+}
+
+export interface AdminsResponse {
+  admins: AdminUser[];
+  pagination?: Pagination;
 }
 
 // Extended admin profile interface with additional fields
@@ -46,11 +81,98 @@ export interface ProfileResponse {
 }
 
 // User Types
+export enum UserRole {
+  USER = "USER",
+  ADMIN = "ADMIN",
+  SUPER_ADMIN = "SUPER_ADMIN",
+}
+
 export enum UserStatus {
   ACTIVE = "ACTIVE",
   PENDING = "PENDING",
   SUSPENDED = "SUSPENDED",
   BLOCKED = "BLOCKED",
+}
+
+export enum Gender {
+  MALE = "MALE",
+  FEMALE = "FEMALE",
+  OTHER = "OTHER",
+}
+
+export enum EmploymentStatus {
+  EMPLOYED = "EMPLOYED",
+  UNEMPLOYED = "UNEMPLOYED",
+  SELF_EMPLOYED = "SELF_EMPLOYED",
+  STUDENT = "STUDENT",
+  RETIRED = "RETIRED",
+}
+
+export enum Relationship {
+  SPOUSE = "SPOUSE",
+  PARENT = "PARENT",
+  SIBLING = "SIBLING",
+  CHILD = "CHILD",
+  FRIEND = "FRIEND",
+  OTHER = "OTHER",
+}
+
+export enum DocumentType {
+  ID_DOCUMENT = "ID_DOCUMENT",
+  PROOF_OF_ADDRESS = "PROOF_OF_ADDRESS",
+  BANK_STATEMENT = "BANK_STATEMENT",
+  EMPLOYMENT_LETTER = "EMPLOYMENT_LETTER",
+  OTHER = "OTHER",
+}
+
+export interface UserProfile {
+  dateOfBirth?: string;
+  gender?: Gender;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  bvn?: string;
+  bvnVerified?: boolean;
+}
+
+export interface Employment {
+  employmentStatus?: EmploymentStatus;
+  employerName?: string;
+  jobTitle?: string;
+  monthlyIncome?: number;
+  employmentDuration?: number;
+}
+
+export interface NextOfKin {
+  fullName?: string;
+  relationship?: Relationship;
+  phone?: string;
+  email?: string;
+  address?: string;
+}
+
+export interface BankAccount {
+  id: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  isDefault: boolean;
+}
+
+export interface Document {
+  id: string;
+  type: DocumentType;
+  url: string;
+  verified: boolean;
+  createdAt: string;
+}
+
+export interface Wallet {
+  id: string;
+  balance: number;
+  currency: string;
+  createdAt: string;
 }
 
 export interface User {
@@ -59,10 +181,60 @@ export interface User {
   lastName: string;
   email: string;
   phone: string;
-  status: UserStatus;
-  isVerified: boolean;
+  role: UserRole;
+  status: UserStatus; // Keep status for backward compatibility
+  verified: boolean;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
+  isActive: boolean;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  profile?: UserProfile;
+  employment?: Employment;
+  nextOfKin?: NextOfKin;
+  bankAccounts?: BankAccount[];
+  documents?: Document[];
+  wallets?: Wallet[];
+}
+
+export interface UserFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: UserRole;
+  verified?: boolean;
+  isActive?: boolean;
+}
+
+export interface UpdateUserRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  role?: UserRole;
+  verified?: boolean;
+}
+
+export interface UpdateUserStatusRequest {
+  isActive: boolean;
+}
+
+export interface BulkUserOperation {
+  operation: "ACTIVATE" | "DEACTIVATE" | "DELETE";
+  userIds: string[];
+  notes?: string;
+}
+
+export interface BulkOperationResult {
+  userId: string;
+  status: string;
+  error?: string;
+}
+
+export interface BulkOperationResponse {
+  processedCount: number;
+  successfulOperations: BulkOperationResult[];
+  failedOperations: BulkOperationResult[];
 }
 
 // Pagination types
@@ -78,14 +250,37 @@ export interface PaginatedResponse<T> {
   pagination: Pagination;
 }
 
-// User response types
-export interface UserResponse {
-  user: User;
+// API Response types
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
 }
 
 export interface UsersResponse {
   users: User[];
   pagination: Pagination;
+}
+
+export interface UserResponse {
+  user: User;
+}
+
+export interface UserLoansResponse {
+  loans: Array<{
+    id: string;
+    reference: string;
+    amount: number;
+    approvedAmount: number;
+    status: string;
+    type: string;
+    interestRate: number;
+    duration: number;
+    startDate: string;
+    maturityDate: string;
+    createdAt: string;
+  }>;
 }
 
 // Investment Types
@@ -279,14 +474,6 @@ export enum PaymentMethod {
   BANK_ACCOUNT = "BANK_ACCOUNT",
 }
 
-export enum DocumentType {
-  ID_DOCUMENT = "ID_DOCUMENT",
-  BANK_STATEMENT = "BANK_STATEMENT",
-  EMPLOYMENT_LETTER = "EMPLOYMENT_LETTER",
-  SALARY_SLIP = "SALARY_SLIP",
-  BUSINESS_REGISTRATION = "BUSINESS_REGISTRATION",
-}
-
 export enum RepaymentStatus {
   PENDING = "PENDING",
   PAID = "PAID",
@@ -462,14 +649,6 @@ export interface BulkLoanOperationResponse {
 
 export interface LoanProductsResponse {
   products: LoanProduct[];
-}
-
-// API Response Types
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  message?: string;
-  data?: T;
-  error?: string;
 }
 
 // Dashboard Types

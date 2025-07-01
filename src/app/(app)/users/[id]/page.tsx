@@ -235,7 +235,7 @@ export default function UserDetailPage() {
                       
                       <div>
                         <h3 className="font-medium text-muted-foreground">Verification</h3>
-                        {user.isVerified ? (
+                        {user.verified ? (
                           <Badge variant="outline" className="bg-green-50 text-green-700">
                             <UserCheck className="mr-2 h-4 w-4" />
                             Verified

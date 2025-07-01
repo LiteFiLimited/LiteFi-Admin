@@ -49,9 +49,10 @@ export interface EditAdminFormValues {
 interface EditAdminModalProps {
   admin: AdminUser;
   onEditAdmin?: (id: string, data: EditAdminFormValues) => Promise<void>;
+  isLoading?: boolean;
 }
 
-export function EditAdminModal({ admin, onEditAdmin }: EditAdminModalProps) {
+export function EditAdminModal({ admin, onEditAdmin, isLoading = false }: EditAdminModalProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -147,8 +148,14 @@ export function EditAdminModal({ admin, onEditAdmin }: EditAdminModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Edit <Pencil className="h-4 w-4 ml-1" />
+        <Button variant="outline" size="sm" disabled={isLoading}>
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-1" />
+          ) : (
+            <>
+              Edit <Pencil className="h-4 w-4 ml-1" />
+            </>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

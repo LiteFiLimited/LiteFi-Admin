@@ -43,10 +43,13 @@ class NotificationsApi {
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
-        console.error(
-          "Notifications API Error:",
-          error.response?.data || error.message
-        );
+        // Only log meaningful errors, not empty objects
+        if (error.response?.data || error.message) {
+          console.error(
+            "Notifications API Error:",
+            error.response?.data || error.message
+          );
+        }
         return Promise.reject(error);
       }
     );
@@ -120,10 +123,17 @@ class NotificationsApi {
    */
   async getNotifications(): Promise<NotificationsApiResponse> {
     try {
-      console.log(
-        "Fetching notifications with token:",
-        this.token ? "Present" : "Missing"
-      );
+      // If no token, return default response
+      if (!this.token) {
+        console.warn("No authentication token available for notifications");
+        return {
+          success: true,
+          data: [],
+          message: "No notifications available (not authenticated)",
+        };
+      }
+
+      console.log("Fetching notifications");
 
       const response: AxiosResponse<AdminNotification[]> = await this.api.get(
         "/admin/notifications"
@@ -148,19 +158,37 @@ class NotificationsApi {
         };
       }
 
+      // Check if it's an auth error
+      if (this.isAxiosError(error) && error.response?.status === 401) {
+        console.warn("Authentication required for notifications");
+        return {
+          success: true,
+          data: [],
+          message: "No notifications available (authentication required)",
+        };
+      }
+
       return this.handleError(error, "Failed to fetch notifications");
     }
   }
+
   /**
    * Get unread notifications count
    * GET /admin/notifications/unread-count
    */
   async getUnreadCount(): Promise<NotificationsApiResponse> {
     try {
-      console.log(
-        "Fetching unread notifications count with token:",
-        this.token ? "Present" : "Missing"
-      );
+      // If no token, return default response
+      if (!this.token) {
+        console.warn("No authentication token available for notifications");
+        return {
+          success: true,
+          data: { count: 0 },
+          message: "No unread notifications (not authenticated)",
+        };
+      }
+
+      console.log("Fetching unread notifications count");
 
       const response: AxiosResponse<NotificationCountResponse> =
         await this.api.get("/admin/notifications/unread-count");
@@ -181,6 +209,16 @@ class NotificationsApi {
           success: true,
           data: { count: 0 },
           message: "No unread notifications (endpoint not implemented)",
+        };
+      }
+
+      // Check if it's an auth error
+      if (this.isAxiosError(error) && error.response?.status === 401) {
+        console.warn("Authentication required for notifications");
+        return {
+          success: true,
+          data: { count: 0 },
+          message: "No unread notifications (authentication required)",
         };
       }
 
