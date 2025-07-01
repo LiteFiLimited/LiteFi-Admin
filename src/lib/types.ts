@@ -20,10 +20,29 @@ export interface AdminUser {
   updatedAt: string;
 }
 
+// Extended admin profile interface with additional fields
+export interface AdminProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: AdminRole;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AuthResponse {
   admin: AdminUser;
   accessToken: string;
   refreshToken: string;
+}
+
+// Profile API responses
+export interface ProfileResponse {
+  success: boolean;
+  data: AdminProfile;
+  message: string;
 }
 
 // User Types
