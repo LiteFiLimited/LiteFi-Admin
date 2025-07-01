@@ -178,12 +178,18 @@ export function AppSidebar() {
                     variant="default"
                     tooltip={item.name}
                   >
-                    <Link href={item.href} className="flex items-center py-2">
+                    <Link href={item.href} className={cn(
+                      "flex items-center py-2 px-3 rounded-md transition-colors",
+                      pathname === item.href ? "bg-gray-800 text-white dark:bg-gray-800 dark:text-white" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                    )}>
                       <item.icon className={cn(
                         "h-6 w-6 mr-3 shrink-0", 
-                        pathname === item.href ? "text-primary" : "text-muted-foreground"
+                        pathname === item.href ? "text-white" : "text-muted-foreground"
                       )} />
-                      <span className="text-sm group-data-[state=collapsed]:hidden">{item.name}</span>
+                      <span className={cn(
+                        "text-sm group-data-[state=collapsed]:hidden",
+                        pathname === item.href ? "text-white font-medium" : "text-muted-foreground"
+                      )}>{item.name}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

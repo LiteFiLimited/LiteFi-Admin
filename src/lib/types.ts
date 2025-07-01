@@ -1,13 +1,13 @@
 // Admin User Types
 export enum AdminRole {
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  ADMIN = 'ADMIN',
-  SALES = 'SALES',
-  RISK = 'RISK',
-  FINANCE = 'FINANCE',
-  COMPLIANCE = 'COMPLIANCE',
-  COLLECTIONS = 'COLLECTIONS',
-  PORT_MGT = 'PORT_MGT',
+  SUPER_ADMIN = "SUPER_ADMIN",
+  ADMIN = "ADMIN",
+  SALES = "SALES",
+  RISK = "RISK",
+  FINANCE = "FINANCE",
+  COMPLIANCE = "COMPLIANCE",
+  COLLECTIONS = "COLLECTIONS",
+  PORT_MGT = "PORT_MGT",
 }
 
 export interface AdminUser {
@@ -28,10 +28,10 @@ export interface AuthResponse {
 
 // User Types
 export enum UserStatus {
-  ACTIVE = 'ACTIVE',
-  PENDING = 'PENDING',
-  SUSPENDED = 'SUSPENDED',
-  BLOCKED = 'BLOCKED',
+  ACTIVE = "ACTIVE",
+  PENDING = "PENDING",
+  SUSPENDED = "SUSPENDED",
+  BLOCKED = "BLOCKED",
 }
 
 export interface User {
@@ -71,69 +71,378 @@ export interface UsersResponse {
 
 // Investment Types
 export enum InvestmentStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  ACTIVE = 'ACTIVE',
-  COMPLETED = 'COMPLETED',
-  REJECTED = 'REJECTED',
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  ACTIVE = "ACTIVE",
+  MATURED = "MATURED",
+  WITHDRAWN = "WITHDRAWN",
+  CANCELLED = "CANCELLED",
+  COMPLETED = "COMPLETED",
+  REJECTED = "REJECTED",
+}
+
+export enum InvestmentPlanType {
+  NAIRA = "NAIRA",
+  FOREIGN = "FOREIGN",
+  EQUITY = "EQUITY",
 }
 
 export interface Investment {
   id: string;
-  userId: string;
+  reference: string;
+  name: string;
   amount: number;
-  planId: string;
-  planName: string;
   status: InvestmentStatus;
-  startDate: string | null;
-  endDate: string | null;
+  planType: InvestmentPlanType;
+  currency: string;
   interestRate: number;
+  tenure: number;
+  startDate: string | null;
+  maturityDate: string | null;
+  expectedReturns: number;
+  totalInterest?: number;
   createdAt: string;
-  updatedAt: string;
+  activatedAt?: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  plan: {
+    id: string;
+    name: string;
+    description?: string;
+    type: InvestmentPlanType;
+    minimumAmount?: number;
+    maximumAmount?: number;
+    minimumTenure?: number;
+    maximumTenure?: number;
+  };
+  interestPayments?: Array<{
+    id: string;
+    amount: number;
+    status: "PAID" | "PENDING" | "FAILED";
+    paymentDate: string;
+  }>;
+  documents?: Array<{
+    id: string;
+    type: string;
+    url: string;
+    createdAt: string;
+  }>;
+  paymentProof?: {
+    id: string;
+    url: string;
+    createdAt: string;
+  };
+  originalInterestRate?: number;
+  overrideReason?: string;
+  overriddenBy?: string;
+  overriddenAt?: string;
 }
 
 export interface InvestmentPlan {
   id: string;
   name: string;
-  minAmount: number;
-  maxAmount: number;
-  interestRate: number;
-  durationMonths: number;
-  isActive: boolean;
+  description: string;
+  type: InvestmentPlanType;
+  currency: string;
+  minimumAmount: number;
+  maximumAmount: number;
+  minimumTenure: number;
+  maximumTenure: number;
+  interestRates: Array<{
+    id: string;
+    minTenure: number;
+    maxTenure: number;
+    rate: number;
+  }>;
+  features: string[];
+  active: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface InvestmentsResponse {
+  investments: Investment[];
+  pagination: Pagination;
+}
+
+export interface InvestmentPlansResponse {
+  plans: InvestmentPlan[];
+}
+
+export interface UpdateInvestmentStatusRequest {
+  status: InvestmentStatus;
+  notes?: string;
+}
+
+export interface OverrideInterestRateRequest {
+  overriddenInterestRate: number;
+  reason: string;
+}
+
+export interface BulkInvestmentOperationRequest {
+  operation: "APPROVE" | "REJECT" | "ACTIVATE" | "CANCEL";
+  investmentIds: string[];
+  notes?: string;
+}
+
+export interface BulkInvestmentOperationResponse {
+  processedCount: number;
+  successfulOperations: Array<{
+    investmentId: string;
+    status: InvestmentStatus;
+  }>;
+  failedOperations: Array<{
+    investmentId: string;
+    error: string;
+  }>;
+}
+
+export interface CreateInvestmentPlanRequest {
+  name: string;
+  description: string;
+  type: InvestmentPlanType;
+  currency: string;
+  minimumAmount: number;
+  maximumAmount: number;
+  minimumTenure: number;
+  maximumTenure: number;
+  interestRates: Array<{
+    minTenure: number;
+    maxTenure: number;
+    rate: number;
+  }>;
+  features: string[];
+  active: boolean;
+}
+
+export interface UpdateInvestmentPlanRequest {
+  name?: string;
+  description?: string;
+  maximumAmount?: number;
+  interestRates?: Array<{
+    id?: string;
+    minTenure?: number;
+    maxTenure?: number;
+    rate?: number;
+  }>;
+  features?: string[];
+  active?: boolean;
 }
 
 // Loan Types
 export enum LoanStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  ACTIVE = 'ACTIVE',
-  REPAID = 'REPAID',
-  DEFAULTED = 'DEFAULTED',
-  REJECTED = 'REJECTED',
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  ACTIVE = "ACTIVE",
+  COMPLETED = "COMPLETED",
+  REJECTED = "REJECTED",
+  DEFAULTED = "DEFAULTED",
 }
 
-export interface Loan {
+export enum LoanType {
+  SALARY = "SALARY",
+  WORKING_CAPITAL = "WORKING_CAPITAL",
+  AUTO = "AUTO",
+  TRAVEL = "TRAVEL",
+}
+
+export enum PaymentMethod {
+  BANK_TRANSFER = "BANK_TRANSFER",
+  CARD = "CARD",
+  CASH = "CASH",
+  WALLET = "WALLET",
+  USSD = "USSD",
+  BANK_ACCOUNT = "BANK_ACCOUNT",
+}
+
+export enum DocumentType {
+  ID_DOCUMENT = "ID_DOCUMENT",
+  BANK_STATEMENT = "BANK_STATEMENT",
+  EMPLOYMENT_LETTER = "EMPLOYMENT_LETTER",
+  SALARY_SLIP = "SALARY_SLIP",
+  BUSINESS_REGISTRATION = "BUSINESS_REGISTRATION",
+}
+
+export enum RepaymentStatus {
+  PENDING = "PENDING",
+  PAID = "PAID",
+  OVERDUE = "OVERDUE",
+  PARTIAL = "PARTIAL",
+}
+
+export interface LoanUser {
   id: string;
-  userId: string;
-  amount: number;
-  productId: string;
-  productName: string;
-  status: LoanStatus;
-  startDate: string | null;
-  endDate: string | null;
-  interestRate: number;
-  createdAt: string;
-  updatedAt: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
 }
 
 export interface LoanProduct {
   id: string;
   name: string;
-  minAmount: number;
-  maxAmount: number;
+  description?: string;
+  type: LoanType;
+  minimumAmount: number;
+  maximumAmount: number;
   interestRate: number;
-  durationMonths: number;
-  isActive: boolean;
+  duration: number;
+  serviceFee?: number;
+  processingFee?: number;
+  requiresGuarantor: boolean;
+  requiresCollateral: boolean;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface RepaymentSchedule {
+  id: string;
+  dueDate: string;
+  amount: number;
+  principalAmount: number;
+  interestAmount: number;
+  status: RepaymentStatus;
+  paidDate?: string | null;
+}
+
+export interface RepaymentHistory {
+  id: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  reference: string;
+  paidAt: string;
+  notes?: string;
+}
+
+export interface LoanDocument {
+  id: string;
+  type: DocumentType;
+  url: string;
+  verified: boolean;
+}
+
+export interface Loan {
+  id: string;
+  reference: string;
+  amount: number;
+  approvedAmount?: number;
+  status: LoanStatus;
+  type: LoanType;
+  interestRate: number;
+  duration: number;
+  totalPayable?: number;
+  amountPaid?: number;
+  balanceRemaining?: number;
+  startDate?: string;
+  maturityDate?: string;
+  purpose?: string;
+  createdAt: string;
+  updatedAt?: string;
+  user: LoanUser;
+  product: LoanProduct;
+  repaymentSchedule?: RepaymentSchedule[];
+  repaymentHistory?: RepaymentHistory[];
+  documents?: LoanDocument[];
+}
+
+export interface LoansResponse {
+  loans: Loan[];
+  pagination: Pagination;
+}
+
+export interface UpdateLoanStatusRequest {
+  status: LoanStatus;
+  approvedAmount?: number;
+  rejectionReason?: string;
+  notes?: string;
+}
+
+export interface ManualRepaymentRequest {
+  loanId: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  reference: string;
+  notes?: string;
+}
+
+export interface BulkRepaymentRequest {
+  repayments: {
+    loanId: string;
+    amount: number;
+    reference: string;
+    paymentMethod: PaymentMethod;
+  }[];
+}
+
+export interface BulkRepaymentResponse {
+  processedCount: number;
+  successfulRepayments: {
+    loanId: string;
+    amount: number;
+    reference: string;
+    status: string;
+  }[];
+  failedRepayments: {
+    loanId: string;
+    error: string;
+  }[];
+}
+
+export interface CreateLoanProductRequest {
+  name: string;
+  description?: string;
+  type: LoanType;
+  minimumAmount: number;
+  maximumAmount: number;
+  interestRate: number;
+  duration: number;
+  serviceFee?: number;
+  processingFee?: number;
+  requiresGuarantor: boolean;
+  requiresCollateral: boolean;
+  active: boolean;
+}
+
+export interface UpdateLoanProductRequest {
+  name?: string;
+  description?: string;
+  interestRate?: number;
+  minimumAmount?: number;
+  maximumAmount?: number;
+  duration?: number;
+  serviceFee?: number;
+  processingFee?: number;
+  requiresGuarantor?: boolean;
+  requiresCollateral?: boolean;
+  active?: boolean;
+}
+
+export interface BulkLoanOperationRequest {
+  operation: "APPROVE" | "REJECT" | "ACTIVATE";
+  loanIds: string[];
+  notes?: string;
+}
+
+export interface BulkLoanOperationResponse {
+  processedCount: number;
+  successfulOperations: {
+    loanId: string;
+    status: LoanStatus;
+  }[];
+  failedOperations: {
+    loanId: string;
+    error: string;
+  }[];
+}
+
+export interface LoanProductsResponse {
+  products: LoanProduct[];
 }
 
 // API Response Types
@@ -182,10 +491,17 @@ export interface DashboardSummary {
 
 export interface DashboardActivity {
   id: string;
-  type: 'USER_REGISTRATION' | 'LOAN_APPLICATION' | 'INVESTMENT_CREATED' | 'WITHDRAWAL_REQUEST' | 'DEPOSIT_COMPLETED' | 'LOAN_APPROVED' | 'INVESTMENT_MATURED';
+  type:
+    | "USER_REGISTRATION"
+    | "LOAN_APPLICATION"
+    | "INVESTMENT_CREATED"
+    | "WITHDRAWAL_REQUEST"
+    | "DEPOSIT_COMPLETED"
+    | "LOAN_APPROVED"
+    | "INVESTMENT_MATURED";
   description: string;
   timestamp: string;
-  severity: 'INFO' | 'WARNING' | 'ERROR';
+  severity: "INFO" | "WARNING" | "ERROR";
 }
 
 export interface DashboardActivitiesResponse {
@@ -260,7 +576,7 @@ export interface InvestmentStats {
 
 export interface SystemHealth {
   database: {
-    status: 'CONNECTED' | 'DISCONNECTED';
+    status: "CONNECTED" | "DISCONNECTED";
     responseTime: string;
     connections: number;
   };
@@ -279,7 +595,7 @@ export interface SystemHealth {
 }
 
 export interface ServiceStatus {
-  status: 'AVAILABLE' | 'UNAVAILABLE' | 'DEGRADED';
+  status: "AVAILABLE" | "UNAVAILABLE" | "DEGRADED";
   responseTime: string;
   lastChecked: string;
 }
@@ -303,22 +619,15 @@ export interface Notification {
 
 // Wallet Management Types
 export enum DepositStatus {
-  PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
 }
 
 export enum WithdrawalStatus {
-  PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED',
-  REJECTED = 'REJECTED',
-}
-
-export enum PaymentMethod {
-  BANK_TRANSFER = 'BANK_TRANSFER',
-  CARD = 'CARD',
-  USSD = 'USSD',
-  BANK_ACCOUNT = 'BANK_ACCOUNT',
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+  REJECTED = "REJECTED",
 }
 
 export interface Deposit {
@@ -359,7 +668,7 @@ export interface PaymentChannel {
   id: string;
   name: string;
   type: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
+  status: "ACTIVE" | "INACTIVE" | "MAINTENANCE";
   description: string;
   supportedMethods: PaymentMethod[];
 }
@@ -377,7 +686,12 @@ export interface WalletStats {
 // Legacy interface for backwards compatibility
 export interface Activity {
   id: string;
-  type: 'USER_REGISTRATION' | 'INVESTMENT_CREATED' | 'LOAN_CREATED' | 'DEPOSIT' | 'WITHDRAWAL';
+  type:
+    | "USER_REGISTRATION"
+    | "INVESTMENT_CREATED"
+    | "LOAN_CREATED"
+    | "DEPOSIT"
+    | "WITHDRAWAL";
   description: string;
   timestamp: string;
 }
@@ -398,9 +712,15 @@ export interface PasswordChange {
 // Transaction Types
 export interface Transaction {
   id: string;
-  type: 'DEPOSIT' | 'WITHDRAWAL' | 'LOAN_DISBURSEMENT' | 'LOAN_REPAYMENT' | 'INVESTMENT_DEPOSIT' | 'INVESTMENT_WITHDRAWAL';
+  type:
+    | "DEPOSIT"
+    | "WITHDRAWAL"
+    | "LOAN_DISBURSEMENT"
+    | "LOAN_REPAYMENT"
+    | "INVESTMENT_DEPOSIT"
+    | "INVESTMENT_WITHDRAWAL";
   amount: number;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  status: "PENDING" | "COMPLETED" | "FAILED";
   reference: string;
   userId: string;
   createdAt: string;
@@ -443,39 +763,23 @@ export interface UserAnalytics {
 }
 
 export interface ExportRequest {
-  type: 'USERS' | 'LOANS' | 'INVESTMENTS' | 'TRANSACTIONS';
+  type: "USERS" | "LOANS" | "INVESTMENTS" | "TRANSACTIONS";
   filters?: Record<string, unknown>;
-  format: 'CSV' | 'EXCEL';
+  format: "CSV" | "EXCEL";
 }
 
 export interface ExportStatus {
   id: string;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
   url?: string;
   createdAt: string;
   completedAt?: string;
 }
 
-// Investment Plan Types
-export interface InvestmentPlan {
-  id: string;
-  name: string;
-  description: string;
-  type: 'NAIRA' | 'FOREIGN' | 'EQUITY';
-  minAmount: number;
-  maxAmount: number;
-  interestRate: number;
-  duration: number;
-  status: 'ACTIVE' | 'INACTIVE';
-  features: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
 // Bulk Operation Types
 export interface BulkOperation<T> {
   items: T[];
-  operation: 'CREATE' | 'UPDATE' | 'DELETE';
+  operation: "CREATE" | "UPDATE" | "DELETE";
   metadata?: Record<string, unknown>;
 }
 
@@ -504,8 +808,8 @@ export interface AuditLog {
 
 export interface ComplianceReport {
   id: string;
-  type: 'KYC' | 'AML' | 'TRANSACTION' | 'REGULATORY';
-  status: 'PENDING' | 'COMPLETED';
+  type: "KYC" | "AML" | "TRANSACTION" | "REGULATORY";
+  status: "PENDING" | "COMPLETED";
   period: {
     start: string;
     end: string;
@@ -513,7 +817,7 @@ export interface ComplianceReport {
   summary: {
     totalRecords: number;
     flaggedItems: number;
-    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+    riskLevel: "LOW" | "MEDIUM" | "HIGH";
   };
   createdAt: string;
   completedAt?: string;

@@ -4,6 +4,8 @@ import React, { createContext, useContext, useEffect, useState, ReactNode, useCa
 import { useRouter } from 'next/navigation';
 import { AdminRole, AdminUser } from '@/lib/types';
 import apiClient from '@/lib/api';
+import loanApi from '@/lib/loanApi';
+import investmentApi from '@/lib/investmentApi';
 import { useToast } from '@/components/ui/toast-provider';
 
 interface AuthContextType {
@@ -53,6 +55,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       // Clear user state and redirect to login regardless of API call result
       setUser(null);
+      
+      // Clear tokens from all API clients
+      loanApi.clearToken();
+      investmentApi.clearToken();
+      
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('admin_id');
+      }
       setIsLoading(false);
       router.push('/login');
     }
@@ -65,23 +75,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const token = apiClient.getToken();
         
         if (!token) {
-            setIsLoading(false);
-            return;
+          // Clear tokens from all API clients just in case
+          loanApi.clearToken();
+          investmentApi.clearToken();
+          setIsLoading(false);
+          return;
+        }
+
+        // Get stored admin ID
+        const adminId = typeof window !== 'undefined' ? localStorage.getItem('admin_id') : null;
+        
+        if (!adminId) {
+          // No admin ID stored, clear token and return
+          apiClient.clearToken();
+          setIsLoading(false);
+          return;
         }
 
         // Verify token with backend and get user profile
-        const response = await apiClient.getProfile();
+        const response = await apiClient.getProfile(adminId);
         
         if (response.success && response.data) {
           setUser(response.data);
         } else {
-          // Token is invalid, clear it
+          // Token is invalid, clear it from all API clients
           apiClient.clearToken();
+          loanApi.clearToken();
+          investmentApi.clearToken();
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('admin_id');
+          }
           setUser(null);
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
         apiClient.clearToken();
+        loanApi.clearToken();
+        investmentApi.clearToken();
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('admin_id');
+        }
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -102,6 +135,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           const response = await apiClient.refreshToken();
           if (response.success && response.data?.accessToken) {
             apiClient.setToken(response.data.accessToken);
+            loanApi.setToken(response.data.accessToken);
+            investmentApi.setToken(response.data.accessToken);
             if (response.data.admin) {
               setUser(response.data.admin);
             }
@@ -145,6 +180,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.success && response.data) {
         // Backend returns admin data in response.data.admin, not response.data.user
         setUser(response.data.admin);
+        
+        // Ensure all API clients have the token set
+        if (response.data.accessToken) {
+          loanApi.setToken(response.data.accessToken);
+          investmentApi.setToken(response.data.accessToken);
+        }
+        
+        // Store admin ID for future profile requests
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('admin_id', response.data.admin.id);
+        }
         
         // Show success toast
         toast({

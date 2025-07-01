@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { UserFilterForm } from '@/components/users/UserFilterForm';
 import { UsersTable } from '@/components/users/UsersTable';
 import { PaginationControls } from '@/components/users/PaginationControls';
+import { AddUserModal } from '@/components/users/AddUserModal';
 import { useSearchParams } from 'next/navigation';
 import { User, Pagination } from '@/lib/types';
 import { Plus, RefreshCw } from 'lucide-react';
@@ -26,6 +27,7 @@ function UsersPageContent() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
 
   const loadUsers = async () => {
     try {
@@ -118,7 +120,7 @@ function UsersPageContent() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={() => setShowAddUserModal(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add User
           </Button>
@@ -163,6 +165,13 @@ function UsersPageContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Add User Modal */}
+      <AddUserModal
+        open={showAddUserModal}
+        onOpenChange={setShowAddUserModal}
+        onUserCreated={loadUsers}
+      />
     </div>
   );
 }
