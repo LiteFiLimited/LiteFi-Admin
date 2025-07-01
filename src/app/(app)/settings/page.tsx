@@ -1,456 +1,464 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit, Eye } from 'lucide-react';
-import { PlanModal, type PlanData } from '@/components/settings/PlanModal';
-import { ProductModal, type ProductData } from '@/components/settings/ProductModal';
+import { AlertCircle, Save, Edit } from 'lucide-react';
+import settingsApi from '@/lib/settingsApi';
+import { SystemSettings, UpdateSystemSettingsRequest } from '@/lib/types';
+import { SettingsSkeleton } from '@/components/settings/SettingsSkeleton';
 import { useToast } from '@/components/ui/toast-provider';
 
 export default function SettingsPage() {
   const { toast } = useToast();
   
-  // Sample plan and product data
-  const [plans, setPlans] = useState<PlanData[]>([
-    { id: '1', name: 'Growth Fund', duration: 12, minAmount: 5000, interestRate: 5.2, isActive: true },
-    { id: '2', name: 'Income Fund', duration: 6, minAmount: 3000, interestRate: 4.8, isActive: true },
-  ]);
+  // Settings state
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const [products, setProducts] = useState<ProductData[]>([
-    { id: '1', name: 'Personal Loan', duration: 12, minAmount: 5000, interestRate: 8.5, isActive: true },
-    { id: '2', name: 'Business Loan', duration: 24, minAmount: 10000, interestRate: 9.2, isActive: true },
-  ]);
-  
-  // Edit mode states
-  const [generalEditMode, setGeneralEditMode] = useState(false);
-  const [notificationsEditMode, setNotificationsEditMode] = useState(false);
-  
-  // Modal state
-  const [planModalOpen, setPlanModalOpen] = useState(false);
-  const [productModalOpen, setProductModalOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<PlanData | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<ProductData | null>(null);
-  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
+  // Form state for editing
+  const [formData, setFormData] = useState<UpdateSystemSettingsRequest>({});
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  // System settings
-  const systemSettings = [
-    { id: 'min_investment', key: 'Minimum Investment Amount', value: '1000', description: 'Minimum amount that can be invested' },
-    { id: 'max_investment', key: 'Maximum Investment Amount', value: '100000', description: 'Maximum amount that can be invested' },
-    { id: 'min_loan', key: 'Minimum Loan Amount', value: '5000', description: 'Minimum amount that can be borrowed' },
-    { id: 'max_loan', key: 'Maximum Loan Amount', value: '50000', description: 'Maximum amount that can be borrowed' },
-    { id: 'investment_fee', key: 'Investment Fee Percentage', value: '2.5', description: 'Fee charged for investment processing' },
-    { id: 'loan_processing_fee', key: 'Loan Processing Fee', value: '1.5', description: 'Fee charged for loan processing' },
-  ];
+  // Fetch system settings
+  const fetchSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  // Notification settings
-  const notificationSettings = [
-    { id: 'notify-new-user', label: 'New user registration', description: 'Notify when a new user registers', defaultChecked: true },
-    { id: 'notify-investment', label: 'New investment application', description: 'Notify when a new investment is created', defaultChecked: true },
-    { id: 'notify-loan', label: 'New loan application', description: 'Notify when a new loan is created', defaultChecked: true },
-    { id: 'notify-payment', label: 'Payment received', description: 'Notify when a payment is received', defaultChecked: true },
-  ];
+      const response = await settingsApi.getSystemSettings();
 
-  // Handlers for plans
-  const handleAddPlan = () => {
-    setSelectedPlan(null);
-    setModalMode('add');
-    setPlanModalOpen(true);
+      if (response.success && response.data) {
+        setSettings(response.data);
+        // Initialize form data with current settings
+        setFormData({
+          defaultInvestmentInterestRate: response.data.defaultInvestmentInterestRate,
+          defaultLoanInterestRate: response.data.defaultLoanInterestRate,
+          minimumInvestmentAmount: response.data.minimumInvestmentAmount,
+          defaultProcessingFee: response.data.defaultProcessingFee,
+          maxWithdrawalPerDay: response.data.maxWithdrawalPerDay,
+          enableForeignInvestments: response.data.enableForeignInvestments,
+          autoApproveNairaInvestments: response.data.autoApproveNairaInvestments,
+          enableUpfrontInterestPayment: response.data.enableUpfrontInterestPayment,
+        });
+        setHasChanges(false);
+      } else {
+        setError(response.error || 'Failed to fetch system settings');
+        setSettings(null);
+      }
+    } catch (err) {
+      setError('Network error occurred while fetching settings');
+      console.error('Error fetching settings:', err);
+      setSettings(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Load settings on component mount
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  // Handle form field changes
+  const handleInputChange = (field: keyof UpdateSystemSettingsRequest, value: string | number | boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+    setHasChanges(true);
   };
 
-  const handleEditPlan = (plan: PlanData) => {
-    setSelectedPlan(plan);
-    setModalMode('edit');
-    setPlanModalOpen(true);
+  // Handle number input changes with validation
+  const handleNumberInputChange = (field: keyof UpdateSystemSettingsRequest, value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0) {
+      handleInputChange(field, numValue);
+    }
   };
 
-  const handleViewPlan = (plan: PlanData) => {
-    setSelectedPlan(plan);
-    setModalMode('view');
-    setPlanModalOpen(true);
-  };
+  // Reset form to original values (removed unused function)
+  // const handleReset = () => { ... } - removed as it's not used in the UI
 
-  const handleSavePlan = (planData: PlanData) => {
-    if (selectedPlan && selectedPlan.id) {
-      // Edit existing plan
-      const updatedPlan = { ...planData, id: selectedPlan.id };
-      setPlans(plans.map(plan => plan.id === selectedPlan.id ? updatedPlan : plan));
+  // Save settings
+  const handleSave = async () => {
+    if (!hasChanges) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const response = await settingsApi.updateSystemSettings(formData);
+
+      if (response.success && response.data) {
+        setSettings(response.data);
+        setHasChanges(false);
+        toast({
+          title: "Settings Updated",
+          message: "System settings have been updated successfully.",
+          type: "success",
+        });
+      } else {
+        setError(response.error || 'Failed to update system settings');
+        toast({
+          title: "Update Failed",
+          message: response.error || 'Failed to update system settings',
+          type: "error",
+        });
+      }
+    } catch (err) {
+      setError('Network error occurred while updating settings');
+      console.error('Error updating settings:', err);
       toast({
-        title: "Plan Updated",
-        message: "Investment plan has been updated successfully",
-        type: "success",
+        title: "Network Error",
+        message: "Unable to update settings. Please try again.",
+        type: "error",
       });
-    } else {
-      // Add new plan - ensure it has an id
-      const newPlan = { ...planData, id: `plan${plans.length + 1}` };
-      setPlans([...plans, newPlan]);
-      toast({
-        title: "Plan Added",
-        message: "New investment plan has been added successfully",
-        type: "success",
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle edit mode
+  const handleEdit = () => {
+    setIsEditMode(true);
+  };
+
+  // Handle cancel (exit edit mode)
+  const handleCancel = () => {
+    setIsEditMode(false);
+    setHasChanges(false);
+    // Reset form data to original settings
+    if (settings) {
+      setFormData({
+        defaultInvestmentInterestRate: settings.defaultInvestmentInterestRate,
+        defaultLoanInterestRate: settings.defaultLoanInterestRate,
+        minimumInvestmentAmount: settings.minimumInvestmentAmount,
+        defaultProcessingFee: settings.defaultProcessingFee,
+        maxWithdrawalPerDay: settings.maxWithdrawalPerDay,
+        enableForeignInvestments: settings.enableForeignInvestments,
+        autoApproveNairaInvestments: settings.autoApproveNairaInvestments,
+        enableUpfrontInterestPayment: settings.enableUpfrontInterestPayment,
       });
     }
-    setSelectedPlan(null);
-    setModalMode('add');
-    setPlanModalOpen(false);
   };
 
-  // Handlers for products
-  const handleAddProduct = () => {
-    setSelectedProduct(null);
-    setModalMode('add');
-    setProductModalOpen(true);
-  };
-
-  const handleEditProduct = (product: ProductData) => {
-    setSelectedProduct(product);
-    setModalMode('edit');
-    setProductModalOpen(true);
-  };
-  
-  const handleViewProduct = (product: ProductData) => {
-    setSelectedProduct(product);
-    setModalMode('view');
-    setProductModalOpen(true);
-  };
-
-  const handleSaveProduct = (productData: ProductData) => {
-    if (selectedProduct && selectedProduct.id) {
-      // Edit existing product
-      const updatedProduct = { ...productData, id: selectedProduct.id };
-      setProducts(products.map(product => product.id === selectedProduct.id ? updatedProduct : product));
-      toast({
-        title: "Product Updated",
-        message: "Loan product has been updated successfully",
-        type: "success",
-      });
-    } else {
-      // Add new product - ensure it has an id
-      const newProduct = { ...productData, id: `product${products.length + 1}` };
-      setProducts([...products, newProduct]);
-      toast({
-        title: "Product Added",
-        message: "New loan product has been added successfully",
-        type: "success",
-      });
+  // Update save function to exit edit mode after successful save
+  const handleSaveAndExit = async () => {
+    await handleSave();
+    if (!error) {
+      setIsEditMode(false);
     }
-    setSelectedProduct(null);
-    setModalMode('add');
-    setProductModalOpen(false);
   };
 
-  // Update general settings save handler
-  const handleSaveGeneralSettings = () => {
-    toast({
-      title: "Settings Saved",
-      message: "General settings have been saved successfully",
-      type: "success",
-    });
-    setGeneralEditMode(false);
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
-  // Update notification settings save handler
-  const handleSaveNotificationSettings = () => {
-    toast({
-      title: "Settings Saved",
-      message: "Notification settings have been saved successfully",
-      type: "success",
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-NG', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
-    setNotificationsEditMode(false);
   };
+
+  if (loading) {
+    return <SettingsSkeleton />;
+  }
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Settings</h1>
-      
-      <Tabs defaultValue="general" className="space-y-4">
-        <div className="overflow-x-auto pb-2">
-          <TabsList className="inline-flex w-max">
-            <TabsTrigger value="general">General Settings</TabsTrigger>
-            <TabsTrigger value="investmentPlans">Investment Plans</TabsTrigger>
-            <TabsTrigger value="loanProducts">Loan Products</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          </TabsList>
-        </div>
-        
-        {/* General Settings Tab */}
-        <TabsContent value="general" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>System Configuration</CardTitle>
-                <CardDescription>
-                  Configure global system parameters
-                </CardDescription>
-              </div>
-              {!generalEditMode && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setGeneralEditMode(true)}
-                >
-                  Edit <Edit className="h-4 w-4 ml-1" />
-                </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">System Settings</h1>
+        <p className="text-muted-foreground">
+          Configure platform defaults, thresholds, and feature flags
+        </p>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2 text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <p>{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Settings Form */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>System Configuration</CardTitle>
+              <CardDescription>
+                Manage default rates, limits, and platform features
+              </CardDescription>
+              {settings && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Last updated: {formatDate(settings.updatedAt)}
+                </p>
               )}
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {systemSettings.map((setting) => (
-                  <div key={setting.id} className="space-y-2">
-                    <Label htmlFor={setting.id}>{setting.key}</Label>
-                    <Input 
-                      id={setting.id} 
-                      defaultValue={setting.value} 
-                      className="w-full"
-                      disabled={!generalEditMode}
-                    />
-                    <p className="text-sm text-muted-foreground">{setting.description}</p>
-                  </div>
-                ))}
-              </div>
-              {generalEditMode && (
-                <div className="flex justify-end">
-                  <Button 
-                    variant="outline" 
-                    className="mr-2" 
-                    onClick={() => setGeneralEditMode(false)}
+            </div>
+            <div className="flex gap-2">
+              {!isEditMode ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEdit}
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancel}
+                    disabled={saving}
                   >
                     Cancel
                   </Button>
-                  <Button onClick={handleSaveGeneralSettings}>Save Settings</Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Investment Plans Tab */}
-        <TabsContent value="investmentPlans" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Investment Plans</CardTitle>
-                <CardDescription>
-                  Manage investment plan offerings
-                </CardDescription>
-              </div>
-              <Button onClick={handleAddPlan}>Add New Plan</Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {plans.map((plan) => (
-                  <div key={plan.id} className="border p-4 rounded-md">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Switch 
-                          id={`active-${plan.id}`} 
-                          defaultChecked={plan.isActive} 
-                          disabled
-                        />
-                        <Label htmlFor={`active-${plan.id}`}>Active</Label>
-                      </div>
-                      <div className="space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleViewPlan(plan)}>
-                          View <Eye className="h-4 w-4 ml-1" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEditPlan(plan)}>
-                          Edit <Edit className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor={`name-${plan.id}`}>Plan Name</Label>
-                        <Input 
-                          id={`name-${plan.id}`} 
-                          value={plan.name} 
-                          disabled 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`duration-${plan.id}`}>Duration (Months)</Label>
-                        <Input 
-                          id={`duration-${plan.id}`} 
-                          type="number" 
-                          value={plan.duration} 
-                          disabled 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`minAmount-${plan.id}`}>Minimum Amount</Label>
-                        <Input 
-                          id={`minAmount-${plan.id}`} 
-                          value={plan.minAmount} 
-                          disabled 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`interest-${plan.id}`}>Interest Rate (%)</Label>
-                        <Input 
-                          id={`interest-${plan.id}`} 
-                          value={plan.interestRate} 
-                          disabled 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Plan Modal */}
-          <PlanModal 
-            isOpen={planModalOpen}
-            onCloseAction={() => setPlanModalOpen(false)}
-            onSaveAction={handleSavePlan}
-            plan={selectedPlan}
-            mode={modalMode}
-          />
-        </TabsContent>
-        
-        {/* Loan Products Tab */}
-        <TabsContent value="loanProducts" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Loan Products</CardTitle>
-                <CardDescription>
-                  Manage loan product offerings
-                </CardDescription>
-              </div>
-              <Button onClick={handleAddProduct}>Add New Product</Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {products.map((product) => (
-                  <div key={product.id} className="border p-4 rounded-md">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Switch 
-                          id={`active-${product.id}`} 
-                          defaultChecked={product.isActive} 
-                          disabled
-                        />
-                        <Label htmlFor={`active-${product.id}`}>Active</Label>
-                      </div>
-                      <div className="space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleViewProduct(product)}>
-                          View <Eye className="h-4 w-4 ml-1" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEditProduct(product)}>
-                          Edit <Edit className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor={`name-${product.id}`}>Product Name</Label>
-                        <Input 
-                          id={`name-${product.id}`} 
-                          value={product.name} 
-                          disabled 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`duration-${product.id}`}>Duration (Months)</Label>
-                        <Input 
-                          id={`duration-${product.id}`} 
-                          type="number" 
-                          value={product.duration} 
-                          disabled 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`minAmount-${product.id}`}>Minimum Amount</Label>
-                        <Input 
-                          id={`minAmount-${product.id}`} 
-                          value={product.minAmount} 
-                          disabled 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`interest-${product.id}`}>Interest Rate (%)</Label>
-                        <Input 
-                          id={`interest-${product.id}`} 
-                          value={product.interestRate} 
-                          disabled 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Product Modal */}
-          <ProductModal 
-            isOpen={productModalOpen}
-            onCloseAction={() => setProductModalOpen(false)}
-            onSaveAction={handleSaveProduct}
-            product={selectedProduct}
-            mode={modalMode}
-          />
-        </TabsContent>
-        
-        {/* Notifications Tab */}
-        <TabsContent value="notifications" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Notification Settings</CardTitle>
-                <CardDescription>
-                  Configure email and system notifications
-                </CardDescription>
-              </div>
-              {!notificationsEditMode && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setNotificationsEditMode(true)}
-                >
-                  Edit <Edit className="h-4 w-4 ml-1" />
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {notificationSettings.map((setting) => (
-                  <div key={setting.id} className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Switch 
-                        id={setting.id} 
-                        defaultChecked={setting.defaultChecked} 
-                        disabled={!notificationsEditMode}
-                      />
-                      <Label htmlFor={setting.id}>{setting.label}</Label>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{setting.description}</p>
-                  </div>
-                ))}
-                
-                {notificationsEditMode && (
-                  <div className="flex justify-end">
-                    <Button 
-                      variant="outline" 
-                      className="mr-2" 
-                      onClick={() => setNotificationsEditMode(false)}
+                  {hasChanges && (
+                    <Button
+                      size="sm"
+                      onClick={handleSaveAndExit}
+                      disabled={saving}
                     >
-                      Cancel
+                      <Save className="h-4 w-4 mr-1" />
+                      {saving ? 'Saving...' : 'Save Changes'}
                     </Button>
-                    <Button onClick={handleSaveNotificationSettings}>Save Notification Settings</Button>
-                  </div>
-                )}
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-8">
+          {/* Financial Settings */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Financial Settings</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="defaultInvestmentInterestRate">
+                  Default Investment Interest Rate (%)
+                </Label>
+                <Input
+                  id="defaultInvestmentInterestRate"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={formData.defaultInvestmentInterestRate || ''}
+                  onChange={(e) => handleNumberInputChange('defaultInvestmentInterestRate', e.target.value)}
+                  placeholder="5.5"
+                  disabled={!isEditMode}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Default interest rate for investments when not explicitly specified
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+
+              <div className="space-y-2">
+                <Label htmlFor="defaultLoanInterestRate">
+                  Default Loan Interest Rate (%)
+                </Label>
+                <Input
+                  id="defaultLoanInterestRate"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={formData.defaultLoanInterestRate || ''}
+                  onChange={(e) => handleNumberInputChange('defaultLoanInterestRate', e.target.value)}
+                  placeholder="15"
+                  disabled={!isEditMode}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Default interest rate for loans when not explicitly specified
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="minimumInvestmentAmount">
+                  Minimum Investment Amount (₦)
+                </Label>
+                <Input
+                  id="minimumInvestmentAmount"
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={formData.minimumInvestmentAmount || ''}
+                  onChange={(e) => handleNumberInputChange('minimumInvestmentAmount', e.target.value)}
+                  placeholder="10000"
+                  disabled={!isEditMode}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Minimum amount required to create an investment
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="defaultProcessingFee">
+                  Default Processing Fee (%)
+                </Label>
+                <Input
+                  id="defaultProcessingFee"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={formData.defaultProcessingFee || ''}
+                  onChange={(e) => handleNumberInputChange('defaultProcessingFee', e.target.value)}
+                  placeholder="1"
+                  disabled={!isEditMode}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Default processing fee percentage for loans
+                </p>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="maxWithdrawalPerDay">
+                  Maximum Daily Withdrawal (₦)
+                </Label>
+                <Input
+                  id="maxWithdrawalPerDay"
+                  type="number"
+                  min="0"
+                  step="10000"
+                  value={formData.maxWithdrawalPerDay || ''}
+                  onChange={(e) => handleNumberInputChange('maxWithdrawalPerDay', e.target.value)}
+                  placeholder="1000000"
+                  disabled={!isEditMode}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Maximum amount that can be withdrawn per day per user
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature Flags */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Feature Settings</h3>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <div className="font-medium">Foreign Investments</div>
+                  <div className="text-sm text-muted-foreground">
+                    Enable or disable foreign currency investments on the platform
+                  </div>
+                </div>
+                <Switch
+                  checked={formData.enableForeignInvestments || false}
+                  onCheckedChange={(checked) => handleInputChange('enableForeignInvestments', checked)}
+                  disabled={!isEditMode}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <div className="font-medium">Auto-Approve Naira Investments</div>
+                  <div className="text-sm text-muted-foreground">
+                    Automatically approve Naira investments without admin review
+                  </div>
+                </div>
+                <Switch
+                  checked={formData.autoApproveNairaInvestments || false}
+                  onCheckedChange={(checked) => handleInputChange('autoApproveNairaInvestments', checked)}
+                  disabled={!isEditMode}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <div className="font-medium">Upfront Interest Payment</div>
+                  <div className="text-sm text-muted-foreground">
+                    Enable upfront interest payment option for investments
+                  </div>
+                </div>
+                <Switch
+                  checked={formData.enableUpfrontInterestPayment || false}
+                  onCheckedChange={(checked) => handleInputChange('enableUpfrontInterestPayment', checked)}
+                  disabled={!isEditMode}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Current Values Summary */}
+          {settings && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Current Configuration</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-sm font-medium text-muted-foreground">Investment Rate</div>
+                    <div className="text-2xl font-bold">{settings.defaultInvestmentInterestRate}%</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-sm font-medium text-muted-foreground">Loan Rate</div>
+                    <div className="text-2xl font-bold">{settings.defaultLoanInterestRate}%</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-sm font-medium text-muted-foreground">Min Investment</div>
+                    <div className="text-2xl font-bold">{formatCurrency(settings.minimumInvestmentAmount)}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-sm font-medium text-muted-foreground">Processing Fee</div>
+                    <div className="text-2xl font-bold">{settings.defaultProcessingFee}%</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-sm font-medium text-muted-foreground">Daily Withdrawal</div>
+                    <div className="text-2xl font-bold">{formatCurrency(settings.maxWithdrawalPerDay)}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-sm font-medium text-muted-foreground">Active Features</div>
+                    <div className="text-2xl font-bold">
+                      {[
+                        settings.enableForeignInvestments && 'Foreign',
+                        settings.autoApproveNairaInvestments && 'Auto-Approve',
+                        settings.enableUpfrontInterestPayment && 'Upfront'
+                      ].filter(Boolean).length}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

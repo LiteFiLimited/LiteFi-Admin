@@ -601,6 +601,31 @@ export interface ServiceStatus {
 }
 
 // System Settings Types
+export interface SystemSettings {
+  id: string;
+  defaultInvestmentInterestRate: number;
+  defaultLoanInterestRate: number;
+  minimumInvestmentAmount: number;
+  defaultProcessingFee: number;
+  maxWithdrawalPerDay: number;
+  enableForeignInvestments: boolean;
+  autoApproveNairaInvestments: boolean;
+  enableUpfrontInterestPayment: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateSystemSettingsRequest {
+  defaultInvestmentInterestRate?: number;
+  defaultLoanInterestRate?: number;
+  minimumInvestmentAmount?: number;
+  defaultProcessingFee?: number;
+  maxWithdrawalPerDay?: number;
+  enableForeignInvestments?: boolean;
+  autoApproveNairaInvestments?: boolean;
+  enableUpfrontInterestPayment?: boolean;
+}
+
 export interface SystemSetting {
   id: string;
   key: string;
