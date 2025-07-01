@@ -635,8 +635,8 @@ export interface Deposit {
   reference: string;
   amount: number;
   status: DepositStatus;
-  paymentMethod: PaymentMethod;
-  channel: string;
+  paymentMethod: string;
+  paymentChannel: string;
   createdAt: string;
   completedAt?: string;
   user: {
@@ -652,7 +652,6 @@ export interface Withdrawal {
   reference: string;
   amount: number;
   status: WithdrawalStatus;
-  paymentMethod: PaymentMethod;
   createdAt: string;
   processedAt?: string;
   notes?: string;
@@ -662,15 +661,25 @@ export interface Withdrawal {
     lastName: string;
     email: string;
   };
+  bankAccount?: {
+    id: string;
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+  };
 }
 
 export interface PaymentChannel {
   id: string;
   name: string;
-  type: string;
-  status: "ACTIVE" | "INACTIVE" | "MAINTENANCE";
+  code: string;
+  type: "MANUAL" | "AUTOMATIC";
   description: string;
-  supportedMethods: PaymentMethod[];
+  active: boolean;
+  processingTime: string;
+  minimumAmount: number;
+  maximumAmount: number;
+  provider?: string;
 }
 
 export interface WalletStats {

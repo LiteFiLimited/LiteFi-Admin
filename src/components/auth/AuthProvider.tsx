@@ -6,6 +6,7 @@ import { AdminRole, AdminUser } from '@/lib/types';
 import apiClient from '@/lib/api';
 import loanApi from '@/lib/loanApi';
 import investmentApi from '@/lib/investmentApi';
+import walletApi from '@/lib/walletApi';
 import { useToast } from '@/components/ui/toast-provider';
 
 interface AuthContextType {
@@ -59,6 +60,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Clear tokens from all API clients
       loanApi.clearToken();
       investmentApi.clearToken();
+      walletApi.clearToken();
       
       if (typeof window !== 'undefined') {
         localStorage.removeItem('admin_id');
@@ -78,6 +80,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Clear tokens from all API clients just in case
           loanApi.clearToken();
           investmentApi.clearToken();
+          walletApi.clearToken();
           setIsLoading(false);
           return;
         }
@@ -102,6 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           apiClient.clearToken();
           loanApi.clearToken();
           investmentApi.clearToken();
+          walletApi.clearToken();
           if (typeof window !== 'undefined') {
             localStorage.removeItem('admin_id');
           }
@@ -112,6 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         apiClient.clearToken();
         loanApi.clearToken();
         investmentApi.clearToken();
+        walletApi.clearToken();
         if (typeof window !== 'undefined') {
           localStorage.removeItem('admin_id');
         }
@@ -137,6 +142,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             apiClient.setToken(response.data.accessToken);
             loanApi.setToken(response.data.accessToken);
             investmentApi.setToken(response.data.accessToken);
+            walletApi.setToken(response.data.accessToken);
             if (response.data.admin) {
               setUser(response.data.admin);
             }
@@ -185,6 +191,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (response.data.accessToken) {
           loanApi.setToken(response.data.accessToken);
           investmentApi.setToken(response.data.accessToken);
+          walletApi.setToken(response.data.accessToken);
         }
         
         // Store admin ID for future profile requests
