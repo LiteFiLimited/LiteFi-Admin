@@ -53,6 +53,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       // Clear user state and redirect to login regardless of API call result
       setUser(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('admin_id');
+      }
       setIsLoading(false);
       router.push('/login');
     }
@@ -69,19 +72,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
             return;
         }
 
+        // Get stored admin ID
+        const adminId = typeof window !== 'undefined' ? localStorage.getItem('admin_id') : null;
+        
+        if (!adminId) {
+          // No admin ID stored, clear token and return
+          apiClient.clearToken();
+          setIsLoading(false);
+          return;
+        }
+
         // Verify token with backend and get user profile
-        const response = await apiClient.getProfile();
+        const response = await apiClient.getProfile(adminId);
         
         if (response.success && response.data) {
           setUser(response.data);
         } else {
           // Token is invalid, clear it
           apiClient.clearToken();
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('admin_id');
+          }
           setUser(null);
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
         apiClient.clearToken();
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('admin_id');
+        }
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -145,6 +164,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.success && response.data) {
         // Backend returns admin data in response.data.admin, not response.data.user
         setUser(response.data.admin);
+        
+        // Store admin ID for future profile requests
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('admin_id', response.data.admin.id);
+        }
         
         // Show success toast
         toast({

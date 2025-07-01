@@ -74,32 +74,164 @@ export enum InvestmentStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   ACTIVE = 'ACTIVE',
+  MATURED = 'MATURED',
+  WITHDRAWN = 'WITHDRAWN',
+  CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED',
   REJECTED = 'REJECTED',
 }
 
+export enum InvestmentPlanType {
+  NAIRA = 'NAIRA',
+  FOREIGN = 'FOREIGN',
+  EQUITY = 'EQUITY',
+}
+
 export interface Investment {
   id: string;
-  userId: string;
+  reference: string;
+  name: string;
   amount: number;
-  planId: string;
-  planName: string;
   status: InvestmentStatus;
-  startDate: string | null;
-  endDate: string | null;
+  planType: InvestmentPlanType;
+  currency: string;
   interestRate: number;
+  tenure: number;
+  startDate: string | null;
+  maturityDate: string | null;
+  expectedReturns: number;
+  totalInterest?: number;
   createdAt: string;
-  updatedAt: string;
+  activatedAt?: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  plan: {
+    id: string;
+    name: string;
+    description?: string;
+    type: InvestmentPlanType;
+    minimumAmount?: number;
+    maximumAmount?: number;
+    minimumTenure?: number;
+    maximumTenure?: number;
+  };
+  interestPayments?: Array<{
+    id: string;
+    amount: number;
+    status: 'PAID' | 'PENDING' | 'FAILED';
+    paymentDate: string;
+  }>;
+  documents?: Array<{
+    id: string;
+    type: string;
+    url: string;
+    createdAt: string;
+  }>;
+  paymentProof?: {
+    id: string;
+    url: string;
+    createdAt: string;
+  };
+  originalInterestRate?: number;
+  overrideReason?: string;
+  overriddenBy?: string;
+  overriddenAt?: string;
 }
 
 export interface InvestmentPlan {
   id: string;
   name: string;
-  minAmount: number;
-  maxAmount: number;
-  interestRate: number;
-  durationMonths: number;
-  isActive: boolean;
+  description: string;
+  type: InvestmentPlanType;
+  currency: string;
+  minimumAmount: number;
+  maximumAmount: number;
+  minimumTenure: number;
+  maximumTenure: number;
+  interestRates: Array<{
+    id: string;
+    minTenure: number;
+    maxTenure: number;
+    rate: number;
+  }>;
+  features: string[];
+  active: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface InvestmentsResponse {
+  investments: Investment[];
+  pagination: Pagination;
+}
+
+export interface InvestmentPlansResponse {
+  plans: InvestmentPlan[];
+}
+
+export interface UpdateInvestmentStatusRequest {
+  status: InvestmentStatus;
+  notes?: string;
+}
+
+export interface OverrideInterestRateRequest {
+  overriddenInterestRate: number;
+  reason: string;
+}
+
+export interface BulkInvestmentOperationRequest {
+  operation: 'APPROVE' | 'REJECT' | 'ACTIVATE' | 'CANCEL';
+  investmentIds: string[];
+  notes?: string;
+}
+
+export interface BulkInvestmentOperationResponse {
+  processedCount: number;
+  successfulOperations: Array<{
+    investmentId: string;
+    status: InvestmentStatus;
+  }>;
+  failedOperations: Array<{
+    investmentId: string;
+    error: string;
+  }>;
+}
+
+export interface CreateInvestmentPlanRequest {
+  name: string;
+  description: string;
+  type: InvestmentPlanType;
+  currency: string;
+  minimumAmount: number;
+  maximumAmount: number;
+  minimumTenure: number;
+  maximumTenure: number;
+  interestRates: Array<{
+    minTenure: number;
+    maxTenure: number;
+    rate: number;
+  }>;
+  features: string[];
+  active: boolean;
+}
+
+export interface UpdateInvestmentPlanRequest {
+  name?: string;
+  description?: string;
+  maximumAmount?: number;
+  interestRates?: Array<{
+    id?: string;
+    minTenure?: number;
+    maxTenure?: number;
+    rate?: number;
+  }>;
+  features?: string[];
+  active?: boolean;
 }
 
 // Loan Types
@@ -454,22 +586,6 @@ export interface ExportStatus {
   url?: string;
   createdAt: string;
   completedAt?: string;
-}
-
-// Investment Plan Types
-export interface InvestmentPlan {
-  id: string;
-  name: string;
-  description: string;
-  type: 'NAIRA' | 'FOREIGN' | 'EQUITY';
-  minAmount: number;
-  maxAmount: number;
-  interestRate: number;
-  duration: number;
-  status: 'ACTIVE' | 'INACTIVE';
-  features: string[];
-  createdAt: string;
-  updatedAt: string;
 }
 
 // Bulk Operation Types
