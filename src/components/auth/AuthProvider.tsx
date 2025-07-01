@@ -9,6 +9,7 @@ import investmentApi from '@/lib/investmentApi';
 import walletApi from '@/lib/walletApi';
 import settingsApi from '@/lib/settingsApi';
 import profileApi from '@/lib/profileApi';
+import notificationsApi from '@/lib/notificationsApi';
 import { useToast } from '@/components/ui/toast-provider';
 
 interface AuthContextType {
@@ -65,6 +66,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       walletApi.clearToken();
       settingsApi.clearToken();
       profileApi.clearToken();
+      notificationsApi.clearToken();
       
       if (typeof window !== 'undefined') {
         localStorage.removeItem('admin_id');
@@ -87,6 +89,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           walletApi.clearToken();
           settingsApi.clearToken();
           profileApi.clearToken();
+          notificationsApi.clearToken();
           setIsLoading(false);
           return;
         }
@@ -106,6 +109,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         if (response.success && response.data) {
           setUser(response.data);
+          
+          // Ensure all API clients have the token set during initialization
+          if (token) {
+            loanApi.setToken(token);
+            investmentApi.setToken(token);
+            walletApi.setToken(token);
+            settingsApi.setToken(token);
+            profileApi.setToken(token);
+            notificationsApi.setToken(token);
+          }
         } else {
           // Token is invalid, clear it from all API clients
           apiClient.clearToken();
@@ -114,6 +127,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           walletApi.clearToken();
           settingsApi.clearToken();
           profileApi.clearToken();
+          notificationsApi.clearToken();
           if (typeof window !== 'undefined') {
             localStorage.removeItem('admin_id');
           }
@@ -127,6 +141,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         walletApi.clearToken();
         settingsApi.clearToken();
         profileApi.clearToken();
+        notificationsApi.clearToken();
         if (typeof window !== 'undefined') {
           localStorage.removeItem('admin_id');
         }
@@ -155,6 +170,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             walletApi.setToken(response.data.accessToken);
             settingsApi.setToken(response.data.accessToken);
             profileApi.setToken(response.data.accessToken);
+            notificationsApi.setToken(response.data.accessToken);
             if (response.data.admin) {
               setUser(response.data.admin);
             }
@@ -206,6 +222,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           walletApi.setToken(response.data.accessToken);
           settingsApi.setToken(response.data.accessToken);
           profileApi.setToken(response.data.accessToken);
+          notificationsApi.setToken(response.data.accessToken);
         }
         
         // Store admin ID for future profile requests

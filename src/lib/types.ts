@@ -653,6 +653,34 @@ export interface SystemSetting {
 }
 
 // Notifications
+export interface AdminNotification {
+  id: string;
+  title: string;
+  message: string;
+  read: boolean;
+  adminId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateNotificationRequest {
+  title: string;
+  message: string;
+  read?: boolean;
+}
+
+export interface NotificationCountResponse {
+  count: number;
+}
+
+export interface NotificationsApiResponse {
+  success: boolean;
+  data: AdminNotification[] | AdminNotification | NotificationCountResponse;
+  message?: string;
+  error?: string;
+}
+
+// Legacy notification interface (for backwards compatibility)
 export interface Notification {
   id: string;
   type: string;

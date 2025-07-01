@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Notification } from '@/lib/types';
+import React, { useState, useEffect } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,50 +9,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Check, Clock } from 'lucide-react';
+import { Bell, Check, Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast-provider';
-
-// Sample notifications for demo
-const sampleNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'alert',
-    message: 'New user registered: John Doe',
-    isRead: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString() // 5 minutes ago
-  },
-  {
-    id: '2',
-    type: 'info',
-    message: 'Investment application approved',
-    isRead: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString() // 30 minutes ago
-  },
-  {
-    id: '3',
-    type: 'warning',
-    message: 'System maintenance scheduled',
-    isRead: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() // 2 hours ago
-  },
-  {
-    id: '4',
-    type: 'alert',
-    message: 'New loan application submitted',
-    isRead: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() // 5 hours ago
-  }
-];
+import { useNotifications } from '@/hooks/useNotifications';
+import { useRouter } from 'next/navigation';
 
 export function NotificationDropdown() {
-  const [notifications, setNotifications] = useState<Notification[]>(sampleNotifications);
   const [open, setOpen] = useState(false);
+  const [markingRead, setMarkingRead] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
   
-  // Get unread notifications count
-  const unreadCount = notifications.filter(n => !n.isRead).length;
-  
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    refreshNotifications,
+    refreshUnreadCount,
+    markAllAsRead: contextMarkAllAsRead,
+    markAsRead
+  } = useNotifications();
+
+  // Refresh data when dropdown opens
+  useEffect(() => {
+    if (open) {
+      refreshNotifications();
+      refreshUnreadCount();
+    }
+  }, [open, refreshNotifications, refreshUnreadCount]);
   // Format relative time
   const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -71,32 +55,44 @@ export function NotificationDropdown() {
     return `${diffDays}d ago`;
   };
   
-  // Mark all as read
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(notif => ({ ...notif, isRead: true })));
-    toast({
-      title: "All notifications marked as read",
-      type: "success",
-    });
+  // Mark all as read using context
+  const handleMarkAllAsRead = async () => {
+    try {
+      setMarkingRead(true);
+      const success = await contextMarkAllAsRead();
+      
+      if (success) {
+        toast({
+          title: "All notifications marked as read",
+          type: "success",
+        });
+      } else {
+        toast({
+          title: "Failed to mark notifications as read",
+          message: "Please try again",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      toast({
+        title: "Network error",
+        message: "Unable to mark notifications as read",
+        type: "error",
+      });
+    } finally {
+      setMarkingRead(false);
+    }
   };
   
-  // Mark single notification as read
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, isRead: true } 
-          : notification
-      )
-    );
-  };
-  
-  // View all notifications (without showing toast)
+  // View all notifications - navigate to notifications page
   const viewAllNotifications = () => {
-    // Here you would typically navigate to a notifications page or show a full list
-    // For demo purposes, we'll just close the dropdown
     setOpen(false);
+    router.push('/notifications');
   };
+
+  // Get the recent notifications for dropdown (limit to 5)
+  const recentNotifications = notifications.slice(0, 5);
   
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -104,7 +100,9 @@ export function NotificationDropdown() {
         <button className="relative rounded-full p-1 hover:bg-muted" aria-label="Notifications">
           <Bell className="h-5 w-5 text-muted-foreground" />
           {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-primary" />
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
           )}
         </button>
       </DropdownMenuTrigger>
@@ -116,8 +114,12 @@ export function NotificationDropdown() {
               variant="ghost" 
               size="sm" 
               className="h-auto p-1 text-xs"
-              onClick={markAllAsRead}
+              onClick={handleMarkAllAsRead}
+              disabled={markingRead}
             >
+              {markingRead ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : null}
               Mark all as read
             </Button>
           )}
@@ -125,34 +127,47 @@ export function NotificationDropdown() {
         <DropdownMenuSeparator />
         
         <div className="max-h-[300px] overflow-y-auto">
-          {notifications.length === 0 ? (
-            <div className="py-4 text-center text-sm text-muted-foreground">
-              No notifications
+          {loading ? (
+            <div className="py-8 text-center">
+              <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mt-2">Loading notifications...</p>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              <Bell className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+              <p>No notifications</p>
             </div>
           ) : (
-            notifications.map((notification) => (
+            recentNotifications.map((notification) => (
               <DropdownMenuItem 
                 key={notification.id}
-                className={`flex flex-col items-start p-2 ${!notification.isRead ? 'bg-muted/50' : ''}`}
+                className={`flex flex-col items-start p-3 cursor-pointer ${!notification.read ? 'bg-muted/50' : ''}`}
                 onSelect={() => markAsRead(notification.id)}
               >
-                <div className="flex w-full justify-between">
-                  <span className="text-sm font-medium">{notification.message}</span>
-                  {!notification.isRead ? (
-                    <span className="flex h-2 w-2 rounded-full bg-primary" />
-                  ) : null}
+                <div className="flex w-full justify-between items-start">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground mb-1">
+                      {notification.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {notification.message}
+                    </p>
+                  </div>
+                  {!notification.read && (
+                    <span className="flex h-2 w-2 rounded-full bg-primary ml-2 mt-1 flex-shrink-0" />
+                  )}
                 </div>
-                <div className="flex w-full items-center justify-between mt-1">
+                <div className="flex w-full items-center justify-between mt-2">
                   <span className="flex items-center text-xs text-muted-foreground">
                     <Clock className="mr-1 h-3 w-3" />
                     {formatRelativeTime(notification.createdAt)}
                   </span>
-                  {notification.isRead ? (
+                  {notification.read && (
                     <span className="flex items-center text-xs text-muted-foreground">
                       <Check className="mr-1 h-3 w-3" />
                       Read
                     </span>
-                  ) : null}
+                  )}
                 </div>
               </DropdownMenuItem>
             ))
@@ -169,4 +184,4 @@ export function NotificationDropdown() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-} 
+}
