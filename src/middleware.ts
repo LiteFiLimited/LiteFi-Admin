@@ -3,7 +3,17 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Redirect root to dashboard
+  // Allow health check
+  if (pathname === '/api/health') {
+    return NextResponse.next();
+  }
+  
+  // For production deployment, temporarily allow root access
+  if (pathname === '/' && process.env.NODE_ENV === 'production') {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+  
+  // Redirect root to dashboard for development
   if (pathname === '/') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }

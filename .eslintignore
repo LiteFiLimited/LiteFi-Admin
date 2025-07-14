@@ -1,0 +1,17 @@
+# Ignore server.js for ESLint since it's a production Node.js server file
+server.js
+
+# Ignore build outputs
+.next/
+out/
+build/
+
+# Ignore node_modules
+node_modules/
+
+# Ignore environment files
+.env
+.env.*
+
+# Ignore generated files
+*.tsbuildinfo

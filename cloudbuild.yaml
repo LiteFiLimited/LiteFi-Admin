@@ -1,0 +1,61 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/atomic-key-464116-m5/litefi-admin:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/atomic-key-464116-m5/litefi-admin:latest'
+      - '.'
+
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/atomic-key-464116-m5/litefi-admin:${BUILD_ID}'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/atomic-key-464116-m5/litefi-admin:latest'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'litefi-admin'
+      - '--image'
+      - 'gcr.io/atomic-key-464116-m5/litefi-admin:${BUILD_ID}'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'NEXT_PUBLIC_BACKEND_URL=${_BACKEND_URL},BACKEND_URL=${_BACKEND_URL},NEXTAUTH_SECRET=${_NEXTAUTH_SECRET},NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1'
+      - '--max-instances'
+      - '10'
+      - '--memory'
+      - '1Gi'
+      - '--cpu'
+      - '1'
+
+# Images to be pushed to Container Registry
+images:
+  - 'gcr.io/atomic-key-464116-m5/litefi-admin:${BUILD_ID}'
+  - 'gcr.io/atomic-key-464116-m5/litefi-admin:latest'
+
+# Build configuration
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+# Timeout for the entire build (20 minutes)
+timeout: 1200s
+
+substitutions:
+  _BACKEND_URL: 'https://litefi-backend.onrender.com'
+  _NEXTAUTH_SECRET: 'ZDrVVG8ipCpIxWwfShJ9LCLTWUQTjlEq8CM4ZgsA6Ew='
