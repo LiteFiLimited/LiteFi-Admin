@@ -3,15 +3,15 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { UserFilterForm } from '@/components/users/UserFilterForm';
 import { UsersTable } from '@/components/users/UsersTable';
 import { PaginationControls } from '@/components/users/PaginationControls';
+import { AddUserModal } from '@/components/users/AddUserModal';
 import { useSearchParams } from 'next/navigation';
 import { User, Pagination } from '@/lib/types';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-provider';
-import apiClient from '@/lib/api';
+import profileApi from '@/lib/profileApi';
 
 function UsersPageContent() {
   const searchParams = useSearchParams();
@@ -26,6 +26,7 @@ function UsersPageContent() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
 
   const loadUsers = async () => {
     try {
@@ -43,7 +44,7 @@ function UsersPageContent() {
       }
       
       const params = { page, limit, ...apiFilters };
-      const response = await apiClient.getUsers(params);
+      const response = await profileApi.getUsers(params);
       
       if (response.success && response.data) {
         setUsers(response.data.users);
@@ -73,7 +74,7 @@ function UsersPageContent() {
 
   const handleStatusChange = async (id: string, isActive: boolean) => {
     try {
-      const response = await apiClient.updateUserStatus(id, isActive);
+      const response = await profileApi.updateUserStatus(id, isActive);
       
       if (response.success) {
         toast({
@@ -118,7 +119,7 @@ function UsersPageContent() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={() => setShowAddUserModal(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add User
           </Button>
@@ -138,11 +139,29 @@ function UsersPageContent() {
             
             {isLoading ? (
               <div className="space-y-3">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="space-y-2">
+                    <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+                    <div className="h-10 w-[250px] bg-muted animate-pulse rounded" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-4 w-12 bg-muted animate-pulse rounded" />
+                    <div className="h-10 w-[180px] bg-muted animate-pulse rounded" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                    <div className="h-10 w-[180px] bg-muted animate-pulse rounded" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-4 w-14 bg-muted animate-pulse rounded" />
+                    <div className="h-10 w-[180px] bg-muted animate-pulse rounded" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div key={index} className="h-16 w-full bg-muted animate-pulse rounded" />
+                  ))}
+                </div>
               </div>
             ) : users.length > 0 ? (
               <UsersTable users={users} onStatusChange={handleStatusChange} />
@@ -163,6 +182,13 @@ function UsersPageContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Add User Modal */}
+      <AddUserModal
+        open={showAddUserModal}
+        onOpenChange={setShowAddUserModal}
+        onUserCreated={loadUsers}
+      />
     </div>
   );
 }
@@ -183,11 +209,9 @@ function LoadingFallback() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="h-16 w-full bg-muted animate-pulse rounded" />
+            ))}
           </div>
         </CardContent>
       </Card>

@@ -15,7 +15,6 @@ import {
   UserAnalytics,
   ExportRequest,
   ExportStatus,
-  InvestmentPlan,
   BulkOperation,
   BulkOperationResult,
   AuditLog,
@@ -35,14 +34,10 @@ interface RequestConfig {
 class ApiClient {
   private axiosInstance: AxiosInstance;
   private token: string | null = null;
-  private isDevelopment: boolean;
 
   constructor() {
     // Use environment variable for backend URL with localhost as fallback for development
-    const baseURL =
-      process.env.NEXT_PUBLIC_BACKEND_URL ||
-      "https://litefi-backend.onrender.com";
-    this.isDevelopment = process.env.NODE_ENV === "development";
+    const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
     this.axiosInstance = axios.create({
       baseURL,
@@ -136,174 +131,6 @@ class ApiClient {
     }
   }
 
-  private getDemoData<T>(endpoint: string): T | null {
-    // Return demo data for development when backend endpoints are not available
-    if (!this.isDevelopment) return null;
-
-    switch (endpoint) {
-      case "/admin/dashboard/summary":
-        return {
-          overview: {
-            totalUsers: 1250,
-            activeUsers: 850,
-            totalLoans: 320,
-            activeLoans: 180,
-            totalInvestments: 420,
-            activeInvestments: 280,
-            totalTransactions: 5600,
-            totalRevenue: 15750000,
-          },
-          recentStats: {
-            newUsersToday: 25,
-            newLoansToday: 8,
-            newInvestmentsToday: 12,
-            transactionsToday: 156,
-          },
-          monthlyGrowth: {
-            userGrowth: 12.5,
-            loanGrowth: 18.3,
-            investmentGrowth: 22.1,
-            revenueGrowth: 15.8,
-          },
-        } as T;
-
-      case "/admin/dashboard/recent-activities":
-        return {
-          activities: [
-            {
-              id: "act_1",
-              type: "USER_REGISTRATION",
-              description: "New user registered: John Doe",
-              timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-              severity: "INFO",
-            },
-            {
-              id: "act_2",
-              type: "INVESTMENT_CREATED",
-              description: "Investment application: ₦500,000",
-              timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-              severity: "INFO",
-            },
-            {
-              id: "act_3",
-              type: "LOAN_APPLICATION",
-              description: "Loan application submitted: ₦250,000",
-              timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-              severity: "INFO",
-            },
-          ],
-          pagination: {
-            total: 3,
-            page: 1,
-            limit: 10,
-            pages: 1,
-          },
-        } as T;
-
-      case "/admin/dashboard/loan-stats":
-        return {
-          overview: {
-            totalLoans: 320,
-            activeLoans: 180,
-            completedLoans: 95,
-            defaultedLoans: 12,
-            totalLoanAmount: 125000000,
-            totalRepaid: 89500000,
-          },
-          byStatus: {
-            PENDING: 45,
-            APPROVED: 25,
-            ACTIVE: 180,
-            COMPLETED: 95,
-            DEFAULTED: 12,
-            REJECTED: 28,
-          },
-          byType: {
-            SALARY: 180,
-            WORKING_CAPITAL: 85,
-            AUTO: 35,
-            PERSONAL: 20,
-          },
-          monthlyData: [],
-        } as T;
-
-      case "/admin/dashboard/investment-stats":
-        return {
-          overview: {
-            totalInvestments: 420,
-            activeInvestments: 280,
-            maturedInvestments: 115,
-            totalInvestmentAmount: 185000000,
-            totalInterestPaid: 12750000,
-          },
-          byStatus: {
-            PENDING: 25,
-            ACTIVE: 280,
-            MATURED: 115,
-            WITHDRAWN: 85,
-            CANCELLED: 8,
-          },
-          byType: {
-            NAIRA: 320,
-            FOREIGN: 85,
-            EQUITY: 15,
-          },
-          monthlyData: [],
-        } as T;
-
-      case "/admin/system-health":
-        return {
-          database: {
-            status: "CONNECTED",
-            responseTime: "12ms",
-            connections: 15,
-          },
-          externalServices: {
-            mono: {
-              status: "AVAILABLE",
-              responseTime: "145ms",
-              lastChecked: new Date().toISOString(),
-            },
-            dot: {
-              status: "AVAILABLE",
-              responseTime: "89ms",
-              lastChecked: new Date().toISOString(),
-            },
-            zeptomail: {
-              status: "AVAILABLE",
-              responseTime: "234ms",
-              lastChecked: new Date().toISOString(),
-            },
-            sms: {
-              status: "AVAILABLE",
-              responseTime: "167ms",
-              lastChecked: new Date().toISOString(),
-            },
-          },
-          serverMetrics: {
-            uptime: "14d 5h 30m",
-            memoryUsage: "68%",
-            cpuUsage: "23%",
-            diskUsage: "45%",
-          },
-        } as T;
-
-      case "/admin/profile":
-        return {
-          id: "admin_123",
-          firstName: "Joseph",
-          lastName: "Awe",
-          email: "joseph.awe@litefi.ng",
-          role: "SUPER_ADMIN",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as T;
-
-      default:
-        return null;
-    }
-  }
-
   async request<T>(
     endpoint: string,
     options: RequestConfig & {
@@ -343,26 +170,7 @@ class ApiClient {
       const response = await this.axiosInstance.request(config);
       return this.handleApiResponse<T>(response);
     } catch (error) {
-      const axiosError = error as AxiosError;
-
-      // In development, try to return demo data for missing endpoints
-      if (
-        this.isDevelopment &&
-        (axiosError.response?.status === 404 ||
-          axiosError.response?.status === 500)
-      ) {
-        const demoData = this.getDemoData<T>(endpoint);
-        if (demoData) {
-          console.warn(`Using demo data for missing endpoint: ${endpoint}`);
-          return {
-            success: true,
-            data: demoData,
-            message: "Demo data (endpoint not implemented)",
-          };
-        }
-      }
-
-      return this.handleApiError<T>(axiosError);
+      return this.handleApiError<T>(error as AxiosError);
     }
   }
 
@@ -472,8 +280,8 @@ class ApiClient {
     return response;
   }
 
-  async getProfile(): Promise<ApiResponse<AdminUser>> {
-    return this.request<AdminUser>("/admin/profile");
+  async getProfile(id: string): Promise<ApiResponse<AdminUser>> {
+    return this.request<AdminUser>(`/admin/profile/${id}`);
   }
 
   async refreshToken(): Promise<ApiResponse<AuthResponse>> {
@@ -586,35 +394,6 @@ class ApiClient {
     return this.request(`/admin/users/${userId}/transactions`, {
       method: "GET",
       params,
-    });
-  }
-
-  // Investment management endpoints
-  async getInvestments(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-    type?: string;
-  }): Promise<ApiResponse<unknown>> {
-    return this.request("/admin/investments", {
-      method: "GET",
-      params,
-    });
-  }
-
-  async getInvestmentById(id: string): Promise<ApiResponse<unknown>> {
-    return this.request(`/admin/investments/${id}`);
-  }
-
-  async updateInvestmentStatus(
-    id: string,
-    status: string,
-    notes?: string
-  ): Promise<ApiResponse<unknown>> {
-    return this.request(`/admin/investments/${id}/status`, {
-      method: "PUT",
-      data: { status, notes },
     });
   }
 
@@ -820,49 +599,7 @@ class ApiClient {
     return this.request(`/admin/exports/${id}/status`);
   }
 
-  // Investment Plans Management
-  async getInvestmentPlans(): Promise<ApiResponse<InvestmentPlan[]>> {
-    return this.request("/admin/investments/plans");
-  }
-
-  async createInvestmentPlan(
-    data: Omit<InvestmentPlan, "id" | "createdAt" | "updatedAt">
-  ): Promise<ApiResponse<InvestmentPlan>> {
-    return this.request("/admin/investments/plans", {
-      method: "POST",
-      data,
-    });
-  }
-
-  async updateInvestmentPlan(
-    id: string,
-    data: Partial<InvestmentPlan>
-  ): Promise<ApiResponse<InvestmentPlan>> {
-    return this.request(`/admin/investments/plans/${id}`, {
-      method: "PUT",
-      data,
-    });
-  }
-
-  async toggleInvestmentPlanStatus(
-    id: string,
-    isActive: boolean
-  ): Promise<ApiResponse<InvestmentPlan>> {
-    return this.request(`/admin/investments/plans/${id}/status`, {
-      method: "PUT",
-      data: { isActive },
-    });
-  }
-
   // Bulk Operations
-  async bulkInvestmentOperation<T>(
-    data: BulkOperation<T>
-  ): Promise<ApiResponse<BulkOperationResult>> {
-    return this.request("/admin/investments/bulk", {
-      method: "POST",
-      data,
-    });
-  }
 
   async bulkUserOperation<T>(
     data: BulkOperation<T>

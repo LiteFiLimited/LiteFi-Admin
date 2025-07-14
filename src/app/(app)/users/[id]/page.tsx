@@ -235,7 +235,7 @@ export default function UserDetailPage() {
                       
                       <div>
                         <h3 className="font-medium text-muted-foreground">Verification</h3>
-                        {user.isVerified ? (
+                        {user.verified ? (
                           <Badge variant="outline" className="bg-green-50 text-green-700">
                             <UserCheck className="mr-2 h-4 w-4" />
                             Verified
@@ -286,7 +286,7 @@ export default function UserDetailPage() {
                           <tr key={loan.id} className="border-b">
                             <td className="py-3">{loan.id}</td>
                             <td className="py-3">{formatCurrency(loan.amount)}</td>
-                            <td className="py-3">{loan.productName || "Standard"}</td>
+                            <td className="py-3">{loan.product.name || "Standard"}</td>
                             <td className="py-3">
                               <Badge
                                 variant={
@@ -337,7 +337,7 @@ export default function UserDetailPage() {
                           <tr key={investment.id} className="border-b">
                             <td className="py-3">{investment.id}</td>
                             <td className="py-3">{formatCurrency(investment.amount)}</td>
-                            <td className="py-3">{investment.planName}</td>
+                            <td className="py-3">{investment.plan?.name || investment.name}</td>
                             <td className="py-3">
                               <Badge
                                 variant={

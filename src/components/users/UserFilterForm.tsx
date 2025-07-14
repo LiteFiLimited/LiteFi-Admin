@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { UserStatus } from '@/lib/types';
+import { UserRole } from '@/lib/types';
 
 import {
   Form,
@@ -27,11 +27,14 @@ import { Loader2, Search, X } from 'lucide-react';
 
 const formSchema = z.object({
   search: z.string().optional(),
-  status: z.string().refine((val) => val === 'all' || Object.values(UserStatus).includes(val as UserStatus), {
-    message: 'Invalid status value',
+  role: z.string().refine((val) => val === 'all' || Object.values(UserRole).includes(val as UserRole), {
+    message: 'Invalid role value',
   }).optional(),
   verified: z.string().refine((val) => ['all', 'true', 'false'].includes(val), {
     message: 'Invalid verification value',
+  }).optional(),
+  isActive: z.string().refine((val) => ['all', 'true', 'false'].includes(val), {
+    message: 'Invalid active status value',
   }).optional(),
 });
 
@@ -41,8 +44,9 @@ interface UserFilterFormProps {
   isLoading?: boolean;
   onFilterAction: (filters: {
     search?: string;
-    status?: string;
+    role?: string;
     verified?: string;
+    isActive?: string;
   }) => void;
 }
 
@@ -57,8 +61,9 @@ export function UserFilterForm({ isLoading, onFilterAction }: UserFilterFormProp
     resolver: zodResolver(formSchema),
     defaultValues: {
       search: '',
-      status: 'all',
+      role: 'all',
       verified: 'all',
+      isActive: 'all',
     },
   });
 
@@ -69,13 +74,15 @@ export function UserFilterForm({ isLoading, onFilterAction }: UserFilterFormProp
     // Once mounted, set form values from URL
     if (mounted) {
       const search = searchParams.get('search') || '';
-      const status = searchParams.get('status') || 'all';
+      const role = searchParams.get('role') || 'all';
       const verified = searchParams.get('verified') || 'all';
+      const isActive = searchParams.get('isActive') || 'all';
       
       form.reset({
         search,
-        status,
+        role,
         verified,
+        isActive,
       });
     }
   }, [mounted, searchParams, form]);
@@ -125,8 +132,9 @@ export function UserFilterForm({ isLoading, onFilterAction }: UserFilterFormProp
   const clearFilters = () => {
     form.reset({
       search: '',
-      status: 'all',
+      role: 'all',
       verified: 'all',
+      isActive: 'all',
     });
     router.push('/users');
     onFilterAction({});
@@ -193,25 +201,24 @@ export function UserFilterForm({ isLoading, onFilterAction }: UserFilterFormProp
         
         <FormField
           control={form.control}
-          name="status"
+          name="role"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Status</FormLabel>
+              <FormLabel>Role</FormLabel>
               <Select
                 onValueChange={field.onChange}
                 value={field.value}
               >
                 <FormControl>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="All Statuses" />
+                    <SelectValue placeholder="All Roles" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value={UserStatus.ACTIVE}>Active</SelectItem>
-                  <SelectItem value={UserStatus.PENDING}>Pending</SelectItem>
-                  <SelectItem value={UserStatus.SUSPENDED}>Suspended</SelectItem>
-                  <SelectItem value={UserStatus.BLOCKED}>Blocked</SelectItem>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value={UserRole.USER}>User</SelectItem>
+                  <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
+                  <SelectItem value={UserRole.SUPER_ADMIN}>Super Admin</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
@@ -237,6 +244,31 @@ export function UserFilterForm({ isLoading, onFilterAction }: UserFilterFormProp
                   <SelectItem value="all">All Users</SelectItem>
                   <SelectItem value="true">Verified</SelectItem>
                   <SelectItem value="false">Unverified</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="isActive"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Users" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="all">All Users</SelectItem>
+                  <SelectItem value="true">Active</SelectItem>
+                  <SelectItem value="false">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
