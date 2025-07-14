@@ -1,23 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   // Allow health check
-  if (pathname === '/api/health') {
+  if (pathname === "/api/health") {
     return NextResponse.next();
   }
-  
+
   // For production deployment, temporarily allow root access
-  if (pathname === '/' && process.env.NODE_ENV === 'production') {
-    return NextResponse.redirect(new URL('/login', request.url));
+  if (pathname === "/" && process.env.NODE_ENV === "production") {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
-  
+
   // Redirect root to dashboard for development
-  if (pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
-  
+
   // Continue with the request - auth protection handled client-side
   return NextResponse.next();
 }
@@ -33,6 +33,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder files
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|public|assets).*)',
+    "/((?!api|_next/static|_next/image|favicon.ico|public|assets).*)",
   ],
-}; 
+};
